@@ -46,7 +46,7 @@ export function AudioPlayer({ audioUrl }: AudioPlayerProps) {
       audio.removeEventListener("timeupdate", () => {});
       audio.removeEventListener("ended", () => {});
     };
-  }, [audioUrl]);
+  }, [audioUrl, volume]);
 
   // Format time in MM:SS
   const formatTime = (time: number) => {

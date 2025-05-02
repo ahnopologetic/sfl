@@ -1,14 +1,14 @@
-import { AppLayout } from "../../../components/layout/app-layout";
-import { AudioPlayer } from "../../../components/player/audio-player";
-import { SnippetMetadata } from "../../../components/snippets/snippet-metadata";
-import { Badge } from "../../../components/ui/badge";
+import { AppLayout } from "@/app/components/layout/app-layout";
+import { AudioPlayer } from "@/app/components/player/audio-player";
+import { SnippetMetadata } from "@/app/components/snippets/snippet-metadata";
+import { Badge } from "@/app/components/ui/badge";
 
 // This would be fetched from the API in a real app
 const getSnippetData = (id: string) => {
   // In a real app, we'd fetch this based on the ID
   // For now, we'll just return mock data 
   console.log(`Fetching snippet with ID: ${id}`);
-  
+
   return {
     id,
     title: "The Science of Black Holes",
@@ -25,15 +25,16 @@ const getSnippetData = (id: string) => {
   };
 };
 
-interface SnippetDetailPageProps {
-  params: {
+interface PageProps {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function SnippetDetailPage({ params }: SnippetDetailPageProps) {
+export default async function SnippetDetailPage({ params }: PageProps) {
   // Get the snippet data based on the ID
-  const snippet = getSnippetData(params.id);
+  const { id } = await params;
+  const snippet = getSnippetData(id);
 
   return (
     <AppLayout>
@@ -45,11 +46,11 @@ export default function SnippetDetailPage({ params }: SnippetDetailPageProps) {
             <div className="mb-6">
               <AudioPlayer audioUrl={snippet.audio_url} />
             </div>
-            
+
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">About this snippet</h2>
               <p className="text-muted-foreground">{snippet.description}</p>
-              
+
               <div className="flex flex-wrap gap-2">
                 {snippet.tags.map((tag) => (
                   <Badge key={tag} variant="secondary">
@@ -59,7 +60,7 @@ export default function SnippetDetailPage({ params }: SnippetDetailPageProps) {
               </div>
             </div>
           </div>
-          
+
           {/* Right column - Metadata */}
           <div>
             <SnippetMetadata snippet={snippet} />
