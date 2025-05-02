@@ -27,9 +27,9 @@ Audio snippets for being fluent in anyting
 - [ ] Optional Canvas LMS Integration
 - [ ] Optional Spotify Integration
 
-- Datatabase
+- Database
     - [x] Migrate 0
-    - [ ] Migrate 1
+    - [x] Migrate 1
 
 - Deploy
     - [ ] web app
