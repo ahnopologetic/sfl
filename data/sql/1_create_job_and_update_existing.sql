@@ -1,7 +1,12 @@
 -- Update schema for Spotify learning app
 
--- Create new enum for job status
-CREATE TYPE job_status AS ENUM ('pending', 'processing', 'completed', 'failed');
+-- Check if job_status type exists before creating
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'job_status') THEN
+        CREATE TYPE job_status AS ENUM ('pending', 'processing', 'completed', 'failed');
+    END IF;
+END$$;
 
 -- Drop existing triggers and functions first to avoid conflicts
 DROP TRIGGER IF EXISTS update_profiles_updated_at ON profiles;
@@ -33,13 +38,11 @@ CREATE TABLE IF NOT EXISTS jobs (
 
 -- Update snippets table
 ALTER TABLE snippets
-    DROP COLUMN IF EXISTS status,
     ADD COLUMN IF NOT EXISTS job_id UUID REFERENCES jobs(id) ON DELETE CASCADE,
     ADD COLUMN IF NOT EXISTS tags TEXT[],
     ADD COLUMN IF NOT EXISTS is_public BOOLEAN NOT NULL DEFAULT false;
 
--- Drop requests table as it's replaced by jobs
-DROP TABLE IF EXISTS requests;
+-- We're keeping the requests table as requested, no DROP TABLE
 
 -- Create new indexes
 CREATE INDEX IF NOT EXISTS idx_profiles_username ON profiles(username);
@@ -47,12 +50,6 @@ CREATE INDEX IF NOT EXISTS idx_jobs_user_id ON jobs(user_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
 CREATE INDEX IF NOT EXISTS idx_snippets_job_id ON snippets(job_id);
 CREATE INDEX IF NOT EXISTS idx_snippets_is_public ON snippets(is_public);
-
--- Drop old indexes that are no longer needed
-DROP INDEX IF EXISTS idx_snippets_status;
-DROP INDEX IF EXISTS idx_requests_user_id;
-DROP INDEX IF EXISTS idx_requests_status;
-DROP INDEX IF EXISTS idx_requests_snippet_id;
 
 -- Recreate function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -79,6 +76,12 @@ CREATE TRIGGER update_jobs_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+-- Keep the requests trigger
+CREATE TRIGGER update_requests_updated_at
+    BEFORE UPDATE ON requests
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
 -- Enable RLS on new jobs table
 ALTER TABLE jobs ENABLE ROW LEVEL SECURITY;
 
@@ -100,12 +103,9 @@ CREATE POLICY "Users can delete their own jobs"
     USING (auth.uid() = user_id);
 
 -- Update snippets policies to include is_public
-CREATE POLICY "Users can view public snippets"
+DROP POLICY IF EXISTS "Users can view their own snippets" ON snippets;
+CREATE POLICY "Users can view their own snippets"
     ON snippets FOR SELECT
-    USING (is_public = true);
+    USING (auth.uid() = user_id OR is_public = true);
 
--- Drop old request policies
-DROP POLICY IF EXISTS "Users can view their own requests" ON requests;
-DROP POLICY IF EXISTS "Users can create their own requests" ON requests;
-DROP POLICY IF EXISTS "Users can update their own requests" ON requests;
-DROP POLICY IF EXISTS "Users can delete their own requests" ON requests; 
+-- No need to drop the request policies since we're keeping the table 
