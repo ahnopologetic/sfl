@@ -1,28 +1,101 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
+import { signUp, signInWithGoogle, signInWithGithub, createProfile } from "@/lib/supabase";
+import toast from "react-hot-toast";
+import type { AuthError } from "@supabase/supabase-js";
 
 export function SignupForm() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    first_name: "",
+    last_name: "",
+    username: "",
+    email: "",
+    password: "",
+  });
 
-  // This is a dummy handler - in a real app, this would connect to backend
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value,
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call - would be replaced with actual auth API call
-    setTimeout(() => {
-      setIsLoading(false);
-      // Would redirect on success
-    }, 1000);
+    try {
+      // First, sign up the user
+      const { data, error } = await signUp({
+        email: formData.email,
+        password: formData.password,
+        metadata: {
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          username: formData.username,
+        },
+      });
 
-    // Comment for later implementation:
-    // TODO: Connect to /auth/signup endpoint
-    // TODO: Connect to /users endpoint to create profile
+      if (error) throw error;
+      
+      if (data?.user) {
+        // Create profile after successful signup
+        const { error: profileError } = await createProfile(data.user.id, {
+          username: formData.username,
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        });
+
+        if (profileError) {
+          console.error("Error creating profile:", profileError);
+          toast.error("Account created but profile setup failed. Please contact support.");
+        } else {
+          toast.success("Account created successfully! Please check your email to confirm your account.");
+          router.push("/login");
+        }
+      }
+    } catch (error: unknown) {
+      const authError = error as AuthError;
+      toast.error(authError.message || "Failed to create account");
+      console.error("Signup error:", authError);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) throw error;
+    } catch (error: unknown) {
+      const authError = error as AuthError;
+      toast.error(authError.message || "Failed to sign in with Google");
+      console.error("Google sign in error:", authError);
+      setIsLoading(false);
+    }
+  };
+
+  const handleGithubSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await signInWithGithub();
+      if (error) throw error;
+    } catch (error: unknown) {
+      const authError = error as AuthError;
+      toast.error(authError.message || "Failed to sign in with GitHub");
+      console.error("GitHub sign in error:", authError);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -37,6 +110,8 @@ export function SignupForm() {
             autoCorrect="off"
             disabled={isLoading}
             required
+            value={formData.first_name}
+            onChange={handleChange}
           />
         </div>
         <div className="space-y-2">
@@ -48,6 +123,8 @@ export function SignupForm() {
             autoCorrect="off"
             disabled={isLoading}
             required
+            value={formData.last_name}
+            onChange={handleChange}
           />
         </div>
       </div>
@@ -60,6 +137,8 @@ export function SignupForm() {
           autoCorrect="off"
           disabled={isLoading}
           required
+          value={formData.username}
+          onChange={handleChange}
         />
       </div>
       <div className="space-y-2">
@@ -73,6 +152,8 @@ export function SignupForm() {
           autoCorrect="off"
           disabled={isLoading}
           required
+          value={formData.email}
+          onChange={handleChange}
         />
       </div>
       <div className="space-y-2">
@@ -86,6 +167,8 @@ export function SignupForm() {
           autoCorrect="off"
           disabled={isLoading}
           required
+          value={formData.password}
+          onChange={handleChange}
         />
       </div>
       <div className="flex items-center space-x-2">
@@ -115,10 +198,20 @@ export function SignupForm() {
         <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-muted"></div>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <Button variant="outline" type="button" disabled={isLoading}>
+        <Button 
+          variant="outline" 
+          type="button" 
+          disabled={isLoading}
+          onClick={handleGoogleSignIn}
+        >
           Google
         </Button>
-        <Button variant="outline" type="button" disabled={isLoading}>
+        <Button 
+          variant="outline" 
+          type="button" 
+          disabled={isLoading}
+          onClick={handleGithubSignIn}
+        >
           GitHub
         </Button>
       </div>

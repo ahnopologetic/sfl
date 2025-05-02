@@ -1,27 +1,81 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
+import { signIn, signInWithGoogle, signInWithGithub } from "@/lib/supabase";
+import toast from "react-hot-toast";
+import type { AuthError } from "@supabase/supabase-js";
 
 export function LoginForm() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: ""
+  });
 
-  // This is a dummy handler - in a real app, this would connect to backend
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value,
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call - would be replaced with actual auth API call
-    setTimeout(() => {
-      setIsLoading(false);
-      // Would redirect on success
-    }, 1000);
+    try {
+      const { error } = await signIn({
+        email: formData.email,
+        password: formData.password,
+      });
 
-    // Comment for later implementation:
-    // TODO: Connect to /auth/signin endpoint
+      if (error) {
+        throw error;
+      }
+
+      // Successful login
+      toast.success("Logged in successfully!");
+      router.push("/dashboard");
+      router.refresh();
+    } catch (error: unknown) {
+      const authError = error as AuthError;
+      toast.error(authError.message || "Failed to sign in");
+      console.error("Login error:", authError);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) throw error;
+    } catch (error: unknown) {
+      const authError = error as AuthError;
+      toast.error(authError.message || "Failed to sign in with Google");
+      console.error("Google sign in error:", authError);
+      setIsLoading(false);
+    }
+  };
+
+  const handleGithubSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await signInWithGithub();
+      if (error) throw error;
+    } catch (error: unknown) {
+      const authError = error as AuthError;
+      toast.error(authError.message || "Failed to sign in with GitHub");
+      console.error("GitHub sign in error:", authError);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -37,6 +91,8 @@ export function LoginForm() {
           autoCorrect="off"
           disabled={isLoading}
           required
+          value={formData.email}
+          onChange={handleChange}
         />
       </div>
       <div className="space-y-2">
@@ -58,6 +114,8 @@ export function LoginForm() {
           autoCorrect="off"
           disabled={isLoading}
           required
+          value={formData.password}
+          onChange={handleChange}
         />
       </div>
       <div className="flex items-center space-x-2">
@@ -74,10 +132,20 @@ export function LoginForm() {
         <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-muted"></div>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <Button variant="outline" type="button" disabled={isLoading}>
+        <Button 
+          variant="outline" 
+          type="button" 
+          disabled={isLoading}
+          onClick={handleGoogleSignIn}
+        >
           Google
         </Button>
-        <Button variant="outline" type="button" disabled={isLoading}>
+        <Button 
+          variant="outline" 
+          type="button" 
+          disabled={isLoading}
+          onClick={handleGithubSignIn}
+        >
           GitHub
         </Button>
       </div>
