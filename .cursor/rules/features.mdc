@@ -1,0 +1,26 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## Basic
+A. Personalized Learning Snippet Generation
+- Users submit a list of topics, a general theme (e.g., “space exploration”), or a time constraint.
+- AI generates short, structured, voice-ready explanations just like a podcast episode, each ~5 minutes long.
+    - At least 2 guest speakers should be present
+    - Tone of the episode would be either funny, professional, or documentary-like. 
+- Support “fill-in-the-blank curiosity”: suggest learning items based on past interests.
+
+
+B. Playlist Creation + Listening Integration
+- Curate a seamless playlist of generated audio clips.
+- Optional: Directly push to a Spotify playlist, private podcast feed, or download link.
+
+
+C. Curiosity-Driven Recommendations
+- Pull in suggestions based on trending news, popular topics from other users, or specific verticals (science, culture, geopolitics).
+
+
+D. One-Step User Interface
+- User prompts a single message. Output: a personalized, ready-to-listen audio journey.
+- Optional: Save, archive, and search past learning snippets.

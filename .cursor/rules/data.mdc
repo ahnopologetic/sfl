@@ -1,0 +1,74 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Data designs for the app
+
+## Tables
+
+### User (auth.users)
+- Default Supabase auth.users table
+- Used as the base for user authentication
+
+### Profile
+- Extends auth.users
+- Fields:
+  - `id` (UUID, PRIMARY KEY): References auth.users(id)
+  - `username` (TEXT, UNIQUE): User's display name
+  - `full_name` (TEXT): User's full name
+  - `avatar_url` (TEXT): URL to user's avatar
+  - `created_at` (TIMESTAMPTZ): Record creation timestamp
+  - `updated_at` (TIMESTAMPTZ): Last update timestamp
+
+### Snippet
+- Created audio snippets with metadata
+- Fields:
+  - `id` (UUID, PRIMARY KEY): Unique identifier
+  - `user_id` (UUID): References profiles(id)
+  - `title` (TEXT): Snippet title
+  - `description` (TEXT): Optional description
+  - `audio_url` (TEXT): URL to audio file in storage
+  - `duration_seconds` (INTEGER): Length of audio in seconds
+  - `status` (ENUM): One of: pending, processing, completed, failed
+  - `spotify_track_id` (TEXT): Original track ID
+  - `spotify_artist` (TEXT): Track artist
+  - `spotify_album` (TEXT): Track album
+  - `created_at` (TIMESTAMPTZ): Record creation timestamp
+  - `updated_at` (TIMESTAMPTZ): Last update timestamp
+
+### Request
+- User's request for audio snippet
+- Fields:
+  - `id` (UUID, PRIMARY KEY): Unique identifier
+  - `user_id` (UUID): References profiles(id)
+  - `content` (TEXT): Natural language request text
+  - `status` (ENUM): One of: pending, processing, completed, failed
+  - `snippet_id` (UUID): References snippets(id) when completed
+  - `created_at` (TIMESTAMPTZ): Record creation timestamp
+  - `updated_at` (TIMESTAMPTZ): Last update timestamp
+
+## Relationships
+- Profile -> User: One-to-one (CASCADE delete)
+- Snippet -> Profile: Many-to-one (CASCADE delete)
+- Request -> Profile: Many-to-one (CASCADE delete)
+- Request -> Snippet: Many-to-one (SET NULL on delete)
+
+## Security
+- Row Level Security (RLS) enabled on all tables
+- Users can only access their own data
+- Policies defined for SELECT, INSERT, UPDATE, DELETE operations
+
+## Indexes
+- snippets(user_id)
+- snippets(status)
+- requests(user_id)
+- requests(status)
+- requests(snippet_id)
+
+## Rule of thumb
+- Include created_at, updated_at always
+- Be conservative about relationships. Tightly make a relationship. i.e., cascade always on any instance
+- Use UUID for all primary keys
+- Enable RLS by default
+- Add appropriate indexes for query performance 

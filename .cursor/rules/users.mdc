@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## User Persona
+- General
+    - Who want to learn about a specific or multiple topics
+    - Can select topics that they want to learn, or randomly ask too.
+- Students
+    - University or higher education students who have active courses to learn 
+    - They want to summarize what they learned or will learn in the near future, based on course materials and recordings (optionally)

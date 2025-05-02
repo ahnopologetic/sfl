@@ -1,0 +1,25 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Tech decisions
+All tech related, architectural decisions to make for this project.
+
+## Apps
+- Web app
+- Backend server
+
+## Webapp
+TBD
+
+## Backend server
+- FastAPI, for HTTP connection
+
+## Database
+- Supabase for fast prototyping
+- Thus, obviously, postgresql
+- Prefer sqlfile instead of GUI based operation
+
+## Storage
+- Supabase Storage API
