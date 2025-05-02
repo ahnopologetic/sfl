@@ -11,7 +11,9 @@ All tech related, architectural decisions to make for this project.
 - Backend server
 
 ## Webapp
-TBD
+- nextjs (app router)
+- tailwindcss
+- shadcn
 
 ## Backend server
 - FastAPI, for HTTP connection

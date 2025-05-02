@@ -3,3 +3,247 @@ description:
 globs: 
 alwaysApply: false
 ---
+# Design for Snipfluent (SFL)
+Visual design documentation and guidelines for the SFL application.
+
+## Brand Identity
+- **Name**: Snipfluent / SFL
+- **Tagline**: "Audio snippets for being fluent in anyting"
+- **Core values**: Accessibility, Simplicity, Engagement, Personalization
+
+## Design Principles
+- **Simple and familiar**: Follow established UI patterns that modern users already understand
+- **Mobile-first**: Design for mobile screens first, then scale up to larger devices
+- **Visual hierarchy**: Use size, color, and spacing to guide users through the interface
+- **Icon-focused**: Prefer intuitive icons over excessive text where appropriate
+- **Interactive feedback**: Use subtle animations to confirm user actions
+- **Consistency**: Maintain coherent design patterns throughout the application
+
+## Color Palette
+- **Primary**: #1DB954 (Spotify Green)
+- **Secondary**: #191414 (Spotify Black)
+- **Accent**: #1ED760 (Bright Green for highlights)
+- **Neutrals**:
+  - Background: #121212 (Dark Grey)
+  - Surface: #282828 (Medium Grey)
+  - Text: #FFFFFF (White)
+  - Subdued Text: #B3B3B3 (Light Grey)
+- **Semantic**:
+  - Success: #1DB954 (Green)
+  - Error: #E61E32 (Red)
+  - Warning: #FFCE00 (Yellow)
+  - Info: #2E77D0 (Blue)
+
+## Typography
+- **Primary Font**: Inter (Sans-serif)
+- **Headings**:
+  - H1: 32px/40px, Bold
+  - H2: 24px/32px, Bold
+  - H3: 20px/28px, Semibold
+  - H4: 18px/24px, Semibold
+- **Body**:
+  - Regular: 16px/24px
+  - Small: 14px/20px
+  - Caption: 12px/16px
+- **Font Weights**:
+  - Regular: 400
+  - Medium: 500
+  - Semibold: 600
+  - Bold: 700
+
+## Spacing System
+- Base unit: 4px
+- Common spacings: 4px, 8px, 12px, 16px, 24px, 32px, 48px, 64px
+- Component padding: 16px
+- Section margins: 24px
+
+## Component Library
+Using shadcn/ui as the foundation for our component library
+
+### Core Components
+- **Buttons**:
+  - Primary: Filled green (#1DB954)
+  - Secondary: Outlined white/green
+  - Tertiary: Text only
+  - Icon: Circle with icon centered
+  - Sizes: Small (32px), Medium (40px), Large (48px)
+- **Cards**:
+  - Snippet Card: For displaying audio snippets
+  - Topic Card: For displaying topic categories
+  - Player Card: For the active playing audio
+- **Input Controls**:
+  - Text fields
+  - Checkboxes
+  - Radio buttons
+  - Toggle switches
+  - Sliders (for audio control)
+
+### Navigation
+- **Top Navigation Bar**:
+  - Logo (left)
+  - Page title (center)
+  - User profile (right)
+  - Back button when applicable (left)
+- **Bottom Tab Bar** (mobile):
+  - Home/Explore
+  - Search
+  - My Snippets
+  - Create New
+  - Profile
+- **Sidebar** (desktop):
+  - Collapsible
+  - Same navigation items as bottom tab bar
+
+## Web Application
+### Global Elements
+- **Header**:
+  - Consistent across all pages
+  - User profile dropdown with settings, logout options
+  - Notification indicator
+- **Footer**:
+  - Links to Terms, Privacy, Support
+  - Copyright information
+
+### Page Layouts
+
+#### Login/Authentication
+- Clean, minimal layout
+- Large logo centered
+- Clear call-to-action
+- **Components**:
+  - Email/username input
+  - Password input with show/hide toggle
+  - "Remember me" checkbox
+  - Login button (primary)
+  - "Signup instead" link
+  - OAuth buttons (Google, GitHub)
+  - Forgot password link
+
+#### Signup
+- Stepped process with progress indicator
+- **Components**:
+  - Email validation
+  - Password requirements feedback
+  - Username availability check
+  - First/Last name inputs
+  - Terms acceptance checkbox
+  - Submit button (disabled until all required fields valid)
+
+#### Home/Explore
+- Featured content at top (carousel)
+- Category sections with horizontal scrolling
+- **Components**:
+  - Hero carousel (featured snippets)
+  - Category headers with "see all" option
+  - Snippet cards with:
+    - Thumbnail/topic icon
+    - Title
+    - Duration
+    - Topic tags
+    - Play button overlay
+
+#### Audio Listening
+- Large focus on the currently playing audio
+- **Components**:
+  - Central visualization (animated based on audio)
+  - Title and metadata display
+  - Progress bar with elapsed/remaining time
+  - Playback controls:
+    - Play/Pause (primary)
+    - Skip forward 15s
+    - Skip backward 15s
+    - Speed control (0.5x-2x)
+  - Volume control
+  - Transcript toggle with expandable bottom sheet
+  - "Interrupt/Ask" button with microphone activation
+  - Save/Favorite button
+  - Share button
+
+#### My Snippets
+- Grid/List view toggle
+- Sort and filter options
+- **Components**:
+  - Search bar for personal library
+  - Filter dropdown (date, duration, topic)
+  - Sort dropdown (newest, oldest, most played)
+  - Snippet cards with:
+    - Thumbnail
+    - Title
+    - Creation date
+    - Duration
+    - Quick play button
+    - Options menu (rename, delete, share)
+
+#### Create New Snippet
+- Step-by-step wizard interface
+- **Components**:
+  - Topic selection (chips/tags)
+  - Length/duration selector
+  - Tone selector (professional, conversational, humorous)
+  - Advanced options expander
+  - Generate button
+  - Progress indicator during generation
+  - Preview option after generation
+
+### Responsive Behavior
+- **Mobile** (<768px):
+  - Single column layout
+  - Bottom navigation
+  - Reduced padding
+  - Stacked components
+- **Tablet** (768px-1024px):
+  - Two-column layouts where appropriate
+  - Side navigation (collapsible)
+  - Increased whitespace
+- **Desktop** (>1024px):
+  - Multi-column layouts
+  - Fixed side navigation
+  - Maximum content width (1200px)
+  - Increased padding and margins
+
+## Microinteractions and Animation
+- **Audio Visualization**:
+  - Waveform animation synchronized with audio playback
+  - Soft pulsing effect when speaking
+- **Transitions**:
+  - Page transitions: Fade (200ms)
+  - Component mounting: Slight scale + fade (150ms)
+  - List items: Staggered entrance (50ms delay between items)
+- **Feedback**:
+  - Button press: Slight scale down + color change
+  - Success actions: Green check mark animation
+  - Error feedback: Subtle shake animation
+
+## Accessibility
+- **Color Contrast**:
+  - All text meets WCAG AA standards (4.5:1 for normal text, 3:1 for large text)
+  - Interactive elements have sufficient contrast against backgrounds
+- **Screen Readers**:
+  - All images have alt text
+  - ARIA labels for all interactive elements
+  - Proper heading hierarchy
+- **Keyboard Navigation**:
+  - Logical tab order
+  - Focus indicators visible and consistent
+- **Additional Considerations**:
+  - Transcript available for all audio content
+  - Adjustable playback speed
+  - Captions support
+
+## File Structure and Assets
+- **Image Assets**:
+  - Icons: SVG format
+  - Logos: SVG and PNG (@1x, @2x, @3x)
+  - Thumbnails: WebP format
+- **Design Files**:
+  - Component library in Figma
+  - Prototype links for key user flows
+  - Design tokens exported for development
+
+## Inspiration Sources
+- [Claude AI](mdc:https:/claude.ai/new) - For clean, minimal interface
+- [iOS Podcast App](mdc:https:/sketchelements.com/ios-podcast-app) - For audio player UI
+- [Spotify](mdc:https:/spotify.com) - For content discovery patterns
+- [Medium](mdc:https:/medium.com) - For typography and reading experience
+- [Headspace](mdc:https:/headspace.com) - For guided content approach
+
