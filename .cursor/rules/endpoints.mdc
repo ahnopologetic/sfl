@@ -3,8 +3,221 @@ description:
 globs: 
 alwaysApply: false
 ---
-Endpoint design
+# snipfluent Endpoint design
 
-## Description
-snipfluent API endpoints
+## Base URL
+TBD
 
+## Authentication
+All endpoints require authentication using a Bearer token in the Authorization header:
+```
+Authorization: Bearer <access_token>
+```
+
+## User Profile
+Router: `/users`
+
+### Create User Profile
+`POST /users`
+
+Creates a new user profile in the system.
+
+#### Request Body
+```json
+{
+    "last_name": "string",
+    "first_name": "string",
+    "middle_name": "string",
+    "username": "string",
+    "timezone": "string"  // Format: "America/New_York"
+}
+```
+
+#### Response (201 Created)
+```json
+{
+    "id": "string",
+    "last_name": "string",
+    "first_name": "string",
+    "middle_name": "string",
+    "username": "string",
+    "timezone": "string",
+    "created_at": "ISO8601 datetime",
+    "updated_at": "ISO8601 datetime"
+}
+```
+
+#### Error Responses
+- 400 Bad Request: Invalid input data
+- 409 Conflict: Username already exists
+- 500 Internal Server Error: Server error
+
+### Get User Profile
+`GET /users/me`
+
+Retrieves the authenticated user's profile.
+
+#### Response (200 OK)
+```json
+{
+    "id": "string",
+    "last_name": "string",
+    "first_name": "string",
+    "middle_name": "string",
+    "username": "string",
+    "timezone": "string",
+    "created_at": "ISO8601 datetime",
+    "updated_at": "ISO8601 datetime"
+}
+```
+
+#### Error Responses
+- 401 Unauthorized: Invalid or missing authentication
+- 404 Not Found: User profile not found
+- 500 Internal Server Error: Server error
+
+## Audio Snippets
+Router: `/snippets`
+
+### Create Snippet Job
+`POST /snippets`
+
+Creates a new job to generate audio snippets based on the user's request.
+
+#### Request Body
+```json
+{
+    "request_text": "string"  // User's request for audio snippets
+}
+```
+
+#### Response (202 Accepted)
+```json
+{
+    "job_ids": ["string"],  // List of job IDs created
+    "status": "pending",
+    "estimated_completion_time": "ISO8601 datetime"
+}
+```
+
+#### Error Responses
+- 400 Bad Request: Invalid request text
+- 401 Unauthorized: Invalid or missing authentication
+- 500 Internal Server Error: Server error
+
+### Get Job Status
+`GET /snippets/jobs/{job_id}`
+
+Retrieves the status and details of a specific job.
+
+#### Response (200 OK)
+```json
+{
+    "job_id": "string",
+    "status": "pending|processing|completed|failed",
+    "progress": "number",  // 0-100
+    "created_at": "ISO8601 datetime",
+    "updated_at": "ISO8601 datetime",
+    "error_message": "string",  // Only present if status is failed
+    "snippet_ids": ["string"]   // Only present if status is completed
+}
+```
+
+#### Error Responses
+- 401 Unauthorized: Invalid or missing authentication
+- 404 Not Found: Job not found
+- 500 Internal Server Error: Server error
+
+### Get Audio Snippet
+`GET /snippets/{snippet_id}`
+
+Streams the audio content of a specific snippet.
+
+#### Response (200 OK)
+- Content-Type: audio/mpeg
+- Streams the audio content
+
+#### Error Responses
+- 401 Unauthorized: Invalid or missing authentication
+- 404 Not Found: Snippet not found
+- 500 Internal Server Error: Server error
+
+### Get Audio Snippet Metadata
+`GET /snippets/{snippet_id}/metadata`
+
+Get metadata of snippet
+
+#### Response (200 OK)
+```json
+{
+    "id": "string",
+    "user_id": "string",
+    "title": "string",
+    "description": "string",
+    "audio_url": "string",
+    "duration_seconds": "number",
+    "status": "pending|processing|completed|failed",
+    "spotify_track_id": "string",
+    "spotify_artist": "string",
+    "spotify_album": "string",
+    "created_at": "ISO8601 datetime",
+    "updated_at": "ISO8601 datetime"
+}
+```
+
+#### Error Responses
+- 401 Unauthorized: Invalid or missing authentication
+- 404 Not Found: Snippet not found
+- 500 Internal Server Error: Server error
+
+### Update Snippet Metadata
+`PUT /snippets/{snippet_id}`
+
+Updates the metadata of a specific audio snippet.
+
+#### Request Body
+```json
+{
+    "title": "string",
+    "description": "string",
+    "tags": ["string"],
+    "is_public": "boolean"
+}
+```
+
+#### Response (200 OK)
+```json
+{
+    "id": "string",
+    "title": "string",
+    "description": "string",
+    "tags": ["string"],
+    "is_public": "boolean",
+    "updated_at": "ISO8601 datetime"
+}
+```
+
+#### Error Responses
+- 400 Bad Request: Invalid input data
+- 401 Unauthorized: Invalid or missing authentication
+- 404 Not Found: Snippet not found
+- 500 Internal Server Error: Server error
+
+## Rate Limiting
+- 100 requests per minute per user
+- Rate limit headers included in all responses:
+  - X-RateLimit-Limit
+  - X-RateLimit-Remaining
+  - X-RateLimit-Reset
+
+## Error Response Format
+All error responses follow this format:
+```json
+{
+    "error": {
+        "code": "string",
+        "message": "string",
+        "details": "object"  // Optional additional error details
+    }
+}
+```

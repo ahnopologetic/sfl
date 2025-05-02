@@ -16,8 +16,23 @@ Data designs for the app
 - Fields:
   - `id` (UUID, PRIMARY KEY): References auth.users(id)
   - `username` (TEXT, UNIQUE): User's display name
-  - `full_name` (TEXT): User's full name
-  - `avatar_url` (TEXT): URL to user's avatar
+  - `last_name` (TEXT): User's last name
+  - `first_name` (TEXT): User's first name
+  - `middle_name` (TEXT): User's middle name
+  - `timezone` (TEXT): User's timezone (e.g., "America/New_York")
+  - `created_at` (TIMESTAMPTZ): Record creation timestamp
+  - `updated_at` (TIMESTAMPTZ): Last update timestamp
+
+### Job
+- Tracks the processing status of snippet requests
+- Fields:
+  - `id` (UUID, PRIMARY KEY): Unique identifier
+  - `user_id` (UUID): References profiles(id)
+  - `request_text` (TEXT): User's request for audio snippets
+  - `status` (ENUM): One of: pending, processing, completed, failed
+  - `progress` (INTEGER): Processing progress (0-100)
+  - `error_message` (TEXT): Error details if status is failed
+  - `estimated_completion_time` (TIMESTAMPTZ): Estimated completion time
   - `created_at` (TIMESTAMPTZ): Record creation timestamp
   - `updated_at` (TIMESTAMPTZ): Last update timestamp
 
@@ -26,33 +41,24 @@ Data designs for the app
 - Fields:
   - `id` (UUID, PRIMARY KEY): Unique identifier
   - `user_id` (UUID): References profiles(id)
+  - `job_id` (UUID): References jobs(id)
   - `title` (TEXT): Snippet title
   - `description` (TEXT): Optional description
   - `audio_url` (TEXT): URL to audio file in storage
   - `duration_seconds` (INTEGER): Length of audio in seconds
-  - `status` (ENUM): One of: pending, processing, completed, failed
+  - `tags` (TEXT[]): Array of tags
+  - `is_public` (BOOLEAN): Whether the snippet is publicly accessible
   - `spotify_track_id` (TEXT): Original track ID
   - `spotify_artist` (TEXT): Track artist
   - `spotify_album` (TEXT): Track album
   - `created_at` (TIMESTAMPTZ): Record creation timestamp
   - `updated_at` (TIMESTAMPTZ): Last update timestamp
 
-### Request
-- User's request for audio snippet
-- Fields:
-  - `id` (UUID, PRIMARY KEY): Unique identifier
-  - `user_id` (UUID): References profiles(id)
-  - `content` (TEXT): Natural language request text
-  - `status` (ENUM): One of: pending, processing, completed, failed
-  - `snippet_id` (UUID): References snippets(id) when completed
-  - `created_at` (TIMESTAMPTZ): Record creation timestamp
-  - `updated_at` (TIMESTAMPTZ): Last update timestamp
-
 ## Relationships
 - Profile -> User: One-to-one (CASCADE delete)
+- Job -> Profile: Many-to-one (CASCADE delete)
 - Snippet -> Profile: Many-to-one (CASCADE delete)
-- Request -> Profile: Many-to-one (CASCADE delete)
-- Request -> Snippet: Many-to-one (SET NULL on delete)
+- Snippet -> Job: Many-to-one (CASCADE delete)
 
 ## Security
 - Row Level Security (RLS) enabled on all tables
@@ -60,11 +66,12 @@ Data designs for the app
 - Policies defined for SELECT, INSERT, UPDATE, DELETE operations
 
 ## Indexes
+- profiles(username)
+- jobs(user_id)
+- jobs(status)
 - snippets(user_id)
-- snippets(status)
-- requests(user_id)
-- requests(status)
-- requests(snippet_id)
+- snippets(job_id)
+- snippets(is_public)
 
 ## Rule of thumb
 - Include created_at, updated_at always
