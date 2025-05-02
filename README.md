@@ -31,3 +31,7 @@ Audio snippets for being fluent in anyting
     - [x] Migrate 0
     - [ ] Migrate 1
 
+- Deploy
+    - [ ] web app
+    - [ ] BE
+    
