@@ -6,7 +6,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
-import { signUp, signInWithGoogle, signInWithGithub, createProfile } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
 import type { AuthError } from "@supabase/supabase-js";
 
@@ -33,27 +33,38 @@ export function SignupForm() {
     setIsLoading(true);
 
     try {
+      // Create Supabase client
+      const supabase = createClient();
+      
       // First, sign up the user
-      const { data, error } = await signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
-        metadata: {
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          username: formData.username,
-        },
+        options: {
+          data: {
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            username: formData.username,
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
       });
 
       if (error) throw error;
       
       if (data?.user) {
         // Create profile after successful signup
-        const { error: profileError } = await createProfile(data.user.id, {
-          username: formData.username,
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-        });
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            { 
+              id: data.user.id,
+              username: formData.username,
+              first_name: formData.first_name,
+              last_name: formData.last_name,
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            }
+          ]);
 
         if (profileError) {
           console.error("Error creating profile:", profileError);
@@ -75,7 +86,14 @@ export function SignupForm() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      const { error } = await signInWithGoogle();
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      
       if (error) throw error;
     } catch (error: unknown) {
       const authError = error as AuthError;
@@ -88,7 +106,14 @@ export function SignupForm() {
   const handleGithubSignIn = async () => {
     setIsLoading(true);
     try {
-      const { error } = await signInWithGithub();
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      
       if (error) throw error;
     } catch (error: unknown) {
       const authError = error as AuthError;

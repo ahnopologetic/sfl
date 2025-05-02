@@ -1,43 +1,43 @@
 'use client';
 
-import { useEffect, Suspense } from 'react';
+import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 import toast from 'react-hot-toast';
 
-function AuthCallbackContent() {
+export default function AuthCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const code = searchParams.get('code');
 
   useEffect(() => {
     const handleAuthCallback = async () => {
-      const code = searchParams.get('code');
-      
-      if (code) {
-        try {
-          // The supabase client will automatically handle the token exchange
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          
-          if (error) {
-            throw error;
-          }
-          
-          // Successful authentication
-          toast.success('Successfully signed in!');
-          router.push('/dashboard');
-        } catch (error) {
-          console.error('Error exchanging code for session:', error);
-          toast.error('Failed to complete sign in process. Please try again.');
-          router.push('/login');
+      if (!code) {
+        toast.error('No code provided');
+        router.push('/login');
+        return;
+      }
+
+      try {
+        const supabase = createClient();
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        
+        if (error) {
+          throw error;
         }
-      } else {
-        // If no code is provided, redirect to login
+
+        // Successful authentication
+        toast.success('Successfully signed in!');
+        router.push('/dashboard');
+      } catch (error) {
+        console.error('Error signing in:', error);
+        toast.error('Error signing in');
         router.push('/login');
       }
     };
 
     handleAuthCallback();
-  }, [searchParams, router]);
+  }, [code, router]);
 
   return (
     <div className="flex h-screen items-center justify-center">
@@ -46,20 +46,5 @@ function AuthCallbackContent() {
         <p className="text-muted-foreground">Please wait while we complete your authentication.</p>
       </div>
     </div>
-  );
-}
-
-export default function AuthCallbackPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="mb-2 text-2xl font-bold">Loading...</h2>
-          <p className="text-muted-foreground">Please wait while we process your authentication.</p>
-        </div>
-      </div>
-    }>
-      <AuthCallbackContent />
-    </Suspense>
   );
 } 

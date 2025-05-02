@@ -6,7 +6,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
-import { signIn, signInWithGoogle, signInWithGithub } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
 import type { AuthError } from "@supabase/supabase-js";
 
@@ -30,7 +30,8 @@ export function LoginForm() {
     setIsLoading(true);
 
     try {
-      const { error } = await signIn({
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
@@ -55,7 +56,14 @@ export function LoginForm() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      const { error } = await signInWithGoogle();
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      
       if (error) throw error;
     } catch (error: unknown) {
       const authError = error as AuthError;
@@ -68,7 +76,14 @@ export function LoginForm() {
   const handleGithubSignIn = async () => {
     setIsLoading(true);
     try {
-      const { error } = await signInWithGithub();
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      
       if (error) throw error;
     } catch (error: unknown) {
       const authError = error as AuthError;

@@ -1,3 +1,6 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { AppLayout } from "@/app/components/layout/app-layout";
 import { SnippetCard } from "@/app/components/snippets/snippet-card";
 import { SearchBar } from "@/app/components/snippets/search-bar";
@@ -5,6 +8,8 @@ import { Button } from "@/app/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { Plus } from "lucide-react";
 import Link from "next/link";
+import { createClient } from '@/utils/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 // Mock data - would be fetched from API in a real app
 const mySnippets = [
@@ -49,14 +54,38 @@ const pendingSnippets = [
 ];
 
 export default function MySnippetsPage() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+    };
+
+    getUser();
+  }, []);
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex h-[calc(100vh-64px)] items-center justify-center">
+          <p>Loading...</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-8 md:py-12">
-        <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
           <div>
             <h1 className="text-3xl font-bold">My Snippets</h1>
             <p className="mt-2 text-muted-foreground">
-              Manage your personal collection of learning snippets
+              Welcome, {user?.user_metadata?.first_name || user?.email}! Manage your personal collection of learning snippets.
             </p>
           </div>
           <Link href="/create">

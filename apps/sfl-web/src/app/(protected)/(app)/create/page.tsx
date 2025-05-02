@@ -1,5 +1,5 @@
-import { AppLayout } from "../../components/layout/app-layout";
-import { CreateSnippetForm } from "../../components/snippets/create-snippet-form";
+import { AppLayout } from "../../../components/layout/app-layout";
+import { CreateSnippetForm } from "../../../components/snippets/create-snippet-form";
 
 export default function CreatePage() {
   return (
