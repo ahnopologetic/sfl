@@ -6,14 +6,28 @@ Audio snippets for being fluent in anyting
     - [x] Do the basics
     - [ ] Prevent random podcast name, use "snipfluent, [today's date in user's timezone]"
     - [ ] Know your user, time of the day
+
+- Ask question in real time
+    - [ ] Figure out how to do this
+    - [ ] Weave it together with pregenerated audio
+
 - Server
     - [x] Endpoint Design
     - [x] Save Audio Snippets
     - [x] CRUD Audio Snippets 
     - [x] Stream the audio via HTTP
     - [ ] (Multi) Job scheduling
-- Login
-- Signup
+
 - Display
-- [ ] Canvas LMS Integration
-- [ ] Spotify Integration
+    - [ ] Login Page
+    - [ ] Signup Page
+    - [ ] Listening Page
+    - [ ] Explore Page
+
+- [ ] Optional Canvas LMS Integration
+- [ ] Optional Spotify Integration
+
+- Datatabase
+    - [x] Migrate 0
+    - [ ] Migrate 1
+
