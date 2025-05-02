@@ -46,7 +46,6 @@ export function SignupForm() {
             last_name: formData.last_name,
             username: formData.username,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       });
 
@@ -89,9 +88,6 @@ export function SignupForm() {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
       });
       
       if (error) throw error;
@@ -109,9 +105,6 @@ export function SignupForm() {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
       });
       
       if (error) throw error;

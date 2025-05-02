@@ -59,9 +59,6 @@ export function LoginForm() {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
       });
       
       if (error) throw error;
@@ -79,9 +76,6 @@ export function LoginForm() {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
       });
       
       if (error) throw error;

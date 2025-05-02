@@ -53,9 +53,6 @@ export const resetPassword = async (email: string) => {
 export const signInWithGoogle = async () => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
-    },
   });
   
   return { data, error };
@@ -64,9 +61,6 @@ export const signInWithGoogle = async () => {
 export const signInWithGithub = async () => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'github',
-    options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
-    },
   });
   
   return { data, error };
