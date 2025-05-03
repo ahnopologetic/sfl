@@ -51,7 +51,7 @@ export default function NewSnippetPage() {
   };
 
   const handleTopicClick = (topic: string) => {
-    setInputValue(topic);
+    setInputValue((prev) => prev ? `${prev},${topic}` : `I want to hear about ${topic}`);
   };
 
   return (
@@ -93,18 +93,33 @@ export default function NewSnippetPage() {
             </div>
 
             <div className="mt-6">
-              <p className="text-sm text-muted-foreground mb-3">Try these interesting topics:</p>
-              <div className="flex flex-wrap gap-2">
-                {suggestedTopics.map((topic) => (
-                  <Badge
-                    key={topic}
-                    variant="secondary"
-                    className={`cursor-pointer hover:bg-secondary/90 transition-colors ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}
-                    onClick={() => !isSubmitting && handleTopicClick(topic)}
-                  >
-                    {topic}
-                  </Badge>
-                ))}
+              <p className="text-sm text-muted-foreground mb-3">
+                Try these interesting topics:
+              </p>
+              <div className="relative overflow-hidden w-full">
+                <div className="flex gap-2 animate-marquee whitespace-nowrap">
+                  {suggestedTopics.map((topic) => (
+                    <Badge
+                      key={topic}
+                      variant="secondary"
+                      className={`cursor-pointer hover:bg-secondary/90 transition-colors ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}
+                      onClick={() => !isSubmitting && handleTopicClick(topic)}
+                    >
+                      {topic}
+                    </Badge>
+                  ))}
+                  {/* Duplicate the topics for a seamless loop */}
+                  {suggestedTopics.map((topic) => (
+                    <Badge
+                      key={`${topic}-duplicate`}
+                      variant="secondary"
+                      className={`cursor-pointer hover:bg-secondary/90 transition-colors ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}
+                      onClick={() => !isSubmitting && handleTopicClick(topic)}
+                    >
+                      {topic}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
           </form>

@@ -169,11 +169,23 @@ html, body {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-/* @layer base {
+@layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
   }
-} */
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
