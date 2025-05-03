@@ -12,10 +12,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl -sSf https://astral.sh/uv/install.sh | sh
 
 # Copy requirements file
-COPY requirements.txt .
 
 # Install dependencies using uv
-RUN uv pip install --system -r requirements.txt
+RUN uv pip install --system -e .
 
 # Copy application code
 COPY . .
