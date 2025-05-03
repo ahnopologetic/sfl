@@ -23,7 +23,7 @@ interface Snippet {
 }
 
 // Function to fetch public snippets from Supabase
-async function getPublicSnippets(params: { 
+async function getPublicSnippets(params: {
   category?: string;
   search?: string;
 }) {
@@ -32,24 +32,24 @@ async function getPublicSnippets(params: {
     .select('*')
     .eq('is_public', true)
     .order('created_at', { ascending: false });
-  
+
   // Apply category filter if not "All"
   if (params.category && params.category !== 'All') {
     query = query.contains('tags', [params.category]);
   }
-  
+
   // Apply search filter if provided
   if (params.search) {
     query = query.or(`title.ilike.%${params.search}%,description.ilike.%${params.search}%`);
   }
-  
+
   const { data, error } = await query;
-  
+
   if (error) {
     console.error('Error fetching snippets:', error);
     return [];
   }
-  
+
   return data as Snippet[];
 }
 
@@ -57,34 +57,35 @@ async function getPublicSnippets(params: {
 function getUniqueCategories(snippets: Snippet[]) {
   const categoriesSet = new Set<string>();
   categoriesSet.add('All'); // Always include "All" category
-  
+
   snippets.forEach(snippet => {
     if (snippet.tags && Array.isArray(snippet.tags)) {
       snippet.tags.forEach((tag: string) => categoriesSet.add(tag));
     }
   });
-  
+
   return Array.from(categoriesSet);
 }
 
 export default async function ExplorePage({
   searchParams,
 }: {
-  searchParams: { 
+  searchParams: Promise<{
     category?: string;
     search?: string;
-  };
+  }>;
 }) {
   // Get the parameters from URL
-  const selectedCategory = searchParams.category || 'All';
-  const searchQuery = searchParams.search || '';
-  
+  const { category, search } = await searchParams;
+  const selectedCategory = category || 'All';
+  const searchQuery = search || '';
+
   // Fetch snippets with filters
   const snippets = await getPublicSnippets({
     category: selectedCategory,
     search: searchQuery,
   });
-  
+
   // Extract unique categories from all snippets
   const categories = getUniqueCategories(snippets);
 
@@ -97,15 +98,15 @@ export default async function ExplorePage({
             Discover audio snippets on a variety of topics
           </p>
         </div>
-        
+
         <div className="mb-8">
           <SearchBar />
         </div>
-        
+
         <div className="mb-8">
           <CategoryFilter categories={categories} />
         </div>
-        
+
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {snippets.length > 0 ? (
             snippets.map((snippet) => (
