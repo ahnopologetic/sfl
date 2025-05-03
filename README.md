@@ -16,13 +16,15 @@ Audio snippets for being fluent in anyting
     - [x] Save Audio Snippets
     - [x] CRUD Audio Snippets 
     - [x] Stream the audio via HTTP
+    - [ ] Connect to supabase database
+    - [ ] Connect to supabase storage
     - [ ] (Multi) Job scheduling
 
 - Display
-    - [ ] Login Page
-    - [ ] Signup Page
-    - [ ] Listening Page
-    - [ ] Explore Page
+    - [x] Login Page
+    - [x] Signup Page
+    - [x] Listening Page
+    - [x] Explore Page
 
 - [ ] Optional Canvas LMS Integration
 - [ ] Optional Spotify Integration
@@ -32,6 +34,6 @@ Audio snippets for being fluent in anyting
     - [x] Migrate 1
 
 - Deploy
-    - [ ] web app
+    - [x] web app
     - [ ] BE
     
