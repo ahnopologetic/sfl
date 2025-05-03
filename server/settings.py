@@ -6,6 +6,11 @@ class Settings(BaseSettings):
     ELEVENLABS_VOICE_ID_HOST: str
     ELEVENLABS_VOICE_ID_COHOST: str
     OPENAI_API_KEY: str
+    
+    # Supabase configuration
+    SUPABASE_URL: str
+    SUPABASE_KEY: str
+    SUPABASE_JWT_SECRET: str
 
     model_config = SettingsConfigDict(env_file=".env")
 

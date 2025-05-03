@@ -1,12 +1,12 @@
 import os
 import uuid
 from datetime import datetime, timedelta
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Request, Response, Security, status
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, Response, Security, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.security import (
     HTTPAuthorizationCredentials,
     HTTPBearer,
@@ -29,6 +29,13 @@ from schema import (
     Token,
     TokenData,
 )
+from settings import settings
+from supabase_client import supabase_client, verify_jwt_token
+from database import ProfileRepository, JobRepository, SnippetRepository
+from storage import StorageService
+
+# Load environment variables
+load_dotenv()
 
 # Configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "secret-key-for-development-only")
@@ -45,9 +52,8 @@ app = FastAPI(
 # Authentication setup
 security = HTTPBearer()
 
-# In-memory repositories
+# In-memory repositories (to be replaced with Supabase)
 profiles = {}
-usernames = set()
 jobs = {}
 snippets = {}
 
@@ -114,29 +120,7 @@ app.add_middleware(
 app.add_middleware(RateLimitMiddleware)
 
 
-# Authentication functions
-def create_access_token(data: Dict, expires_delta: Optional[timedelta] = None) -> str:
-    to_encode = data.copy()
-
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-    return encoded_jwt
-
-
-def authenticate_user(email: str, password: str) -> Optional[uuid.UUID]:
-    user = MOCK_USERS.get(email)
-    if not user or user["password"] != password:
-        return None
-
-    return user["user_id"]
-
-
+# Authentication with Supabase
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Security(security),
 ) -> uuid.UUID:
@@ -148,103 +132,125 @@ def get_current_user(
 
     try:
         token = credentials.credentials
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-
-        if user_id is None:
+        user_data = verify_jwt_token(token)
+        
+        if not user_data:
             raise credentials_exception
+            
+        user_id = user_data.get("id")
+        if not user_id:
+            raise credentials_exception
+            
+        token_data = TokenData(**user_data)
+        return uuid.UUID(user_id)
 
-        token_data = TokenData(user_id=uuid.UUID(user_id))
-
-    except (JWTError, ValueError):
+    except (JWTError, ValueError) as e:
+        print(f"Authentication error: {str(e)}")
         raise credentials_exception
 
-    return token_data.user_id
+
+# Initialize Supabase storage on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on application startup."""
+    await StorageService.initialize()
 
 
 # Helper functions for job and snippet processing
-async def process_snippet_job(job_id: uuid.UUID, request_text: str, user_id: uuid.UUID):
+async def process_snippet_job(
+    job_id: uuid.UUID,
+    request_text: str,
+    user_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+):
     """Background task to process a snippet job."""
     try:
         # Update job status to processing
-        jobs[job_id]["status"] = JobStatus.PROCESSING
-        jobs[job_id]["progress"] = 10
-        jobs[job_id]["updated_at"] = datetime.now()
-
+        job_data = {
+            "status": JobStatus.PROCESSING,
+            "progress": 10,
+            "updated_at": datetime.now(),
+        }
+        
+        await JobRepository.update_job(job_id, job_data)
+        
         # Generate script
         script = generate_podcast_script(request_text)
-        jobs[job_id]["progress"] = 40
-        jobs[job_id]["updated_at"] = datetime.now()
-
+        
+        job_data = {
+            "progress": 40,
+            "updated_at": datetime.now(),
+        }
+        await JobRepository.update_job(job_id, job_data)
+        
         # Generate audio
         audio_path = generate_podcast_audio(script)
-        jobs[job_id]["progress"] = 90
-        jobs[job_id]["updated_at"] = datetime.now()
-
-        # Create snippet
-        snippet_id = uuid.uuid4()
-        now = datetime.now()
-
+        
+        job_data = {
+            "progress": 90,
+            "updated_at": datetime.now(),
+        }
+        await JobRepository.update_job(job_id, job_data)
+        
+        # Upload audio to Supabase Storage
+        success, audio_url = await StorageService.upload_file(audio_path, user_id)
+        
+        if not success:
+            raise Exception("Failed to upload audio file")
+        
         # Extract title from script (first line after # )
         title = "Untitled Snippet"
         for line in script.split("\n"):
             if line.startswith("# "):
                 title = line[2:].strip()
                 break
-
-        snippets[snippet_id] = {
-            "id": snippet_id,
-            "user_id": user_id,
-            "job_id": job_id,
+        
+        # Create snippet in database
+        snippet_data = {
+            "id": str(uuid.uuid4()),
+            "user_id": str(user_id),
+            "job_id": str(job_id),
             "title": title,
             "description": request_text,
-            "audio_url": f"/snippets/{snippet_id}",
+            "audio_url": audio_url,
             "duration_seconds": 60,  # Approximate for now
             "tags": [],
             "is_public": False,
             "spotify_track_id": None,
             "spotify_artist": None,
             "spotify_album": None,
-            "created_at": now,
-            "updated_at": now,
-            "audio_file_path": audio_path,
+            "created_at": datetime.now(),
+            "updated_at": datetime.now(),
         }
-
+        
+        snippet = await SnippetRepository.create_snippet(snippet_data)
+        
         # Update job as completed
-        jobs[job_id]["status"] = JobStatus.COMPLETED
-        jobs[job_id]["progress"] = 100
-        jobs[job_id]["updated_at"] = datetime.now()
-
+        job_data = {
+            "status": JobStatus.COMPLETED,
+            "progress": 100,
+            "updated_at": datetime.now(),
+        }
+        await JobRepository.update_job(job_id, job_data)
+        
+        # Clean up local file
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
+        
     except Exception as e:
         # Update job as failed
-        jobs[job_id]["status"] = JobStatus.FAILED
-        jobs[job_id]["error_message"] = str(e)
-        jobs[job_id]["updated_at"] = datetime.now()
+        job_data = {
+            "status": JobStatus.FAILED,
+            "error_message": str(e),
+            "updated_at": datetime.now(),
+        }
+        await JobRepository.update_job(job_id, job_data)
 
 
 # API Endpoints
 @app.get("/")
 async def root():
     return {"message": "Welcome to the Snipfluent API. See /docs for documentation."}
-
-
-@app.post("/login", response_model=Token, tags=["auth"])
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    user_id = authenticate_user(form_data.username, form_data.password)
-
-    if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": str(user_id)}, expires_delta=access_token_expires
-    )
-
-    return {"access_token": access_token, "token_type": "bearer"}
 
 
 @app.post(
@@ -256,39 +262,60 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 async def create_user_profile(
     profile: ProfileCreate, user_id: uuid.UUID = Depends(get_current_user)
 ):
-    if profile.username in usernames:
+    """
+    Create a new user profile.
+    
+    This endpoint allows users to create their profile after authentication.
+    """
+    # Check if username exists
+    if await ProfileRepository.username_exists(profile.username):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Username already exists"
         )
 
-    profile_id = user_id  # Use the authenticated user's ID as profile ID
     now = datetime.now()
-
     profile_data = {
-        "id": profile_id,
+        "id": str(user_id),
         "username": profile.username,
         "last_name": profile.last_name,
         "first_name": profile.first_name,
         "middle_name": profile.middle_name,
         "timezone": profile.timezone,
-        "created_at": now,
-        "updated_at": now,
+        "created_at": now.isoformat(),
+        "updated_at": now.isoformat(),
     }
 
-    profiles[profile_id] = profile_data
-    usernames.add(profile.username)
-
-    return profile_data
+    # Create profile in Supabase
+    db_profile = await ProfileRepository.create_profile(profile_data)
+    
+    if not db_profile:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create profile",
+        )
+    
+    # Also update in-memory for backward compatibility
+    profiles[user_id] = profile_data
+    
+    return ProfileResponse(**db_profile)
 
 
 @app.get("/users/me", response_model=ProfileResponse, tags=["users"])
 async def get_user_profile(user_id: uuid.UUID = Depends(get_current_user)):
-    profile = profiles.get(user_id)
-    if not profile:
+    """
+    Get the current user's profile.
+    
+    This endpoint allows users to retrieve their profile information.
+    """
+    # Get profile from Supabase
+    db_profile = await ProfileRepository.get_profile(user_id)
+    
+    if not db_profile:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found"
         )
-    return profile
+        
+    return ProfileResponse(**db_profile)
 
 
 @app.post(
@@ -298,37 +325,57 @@ async def get_user_profile(user_id: uuid.UUID = Depends(get_current_user)):
     tags=["snippets"],
 )
 async def create_snippet_job(
-    request: SnippetJobRequest, user_id: uuid.UUID = Depends(get_current_user)
+    request: SnippetJobRequest, 
+    background_tasks: BackgroundTasks,
+    user_id: uuid.UUID = Depends(get_current_user),
 ):
-    # Create a new job for snippet generation
+    """
+    Create a new snippet job.
+    
+    This endpoint creates a new job to process the user's snippet request.
+    """
+    # Create a new job in the database
     job_id = uuid.uuid4()
     now = datetime.now()
-    estimated_time = now + timedelta(minutes=5)
-
+    estimated_completion = now + timedelta(minutes=2)  # Estimate 2 minutes for processing
+    
     job_data = {
-        "id": job_id,
-        "user_id": user_id,
+        "id": str(job_id),
+        "user_id": str(user_id),
         "request_text": request.request_text,
         "status": JobStatus.PENDING,
         "progress": 0,
-        "error_message": None,
-        "estimated_completion_time": estimated_time,
-        "created_at": now,
-        "updated_at": now,
+        "estimated_completion_time": estimated_completion.isoformat(),
+        "created_at": now.isoformat(),
+        "updated_at": now.isoformat(),
     }
-
+    
+    # Create job in Supabase
+    created_job = await JobRepository.create_job(job_data)
+    
+    if not created_job:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create job",
+        )
+    
+    # Also update in-memory for backward compatibility
     jobs[job_id] = job_data
-
-    # Start processing job (in background in a real app)
-    # Here we'll run it without waiting for completion
-    import asyncio
-
-    asyncio.create_task(process_snippet_job(job_id, request.request_text, user_id))
-
+    
+    # Start processing in the background
+    background_tasks.add_task(
+        process_snippet_job, 
+        job_id, 
+        request.request_text, 
+        user_id,
+        background_tasks,
+    )
+    
+    # Return response
     return SnippetJobResponse(
         job_ids=[job_id],
         status=JobStatus.PENDING,
-        estimated_completion_time=estimated_time,
+        estimated_completion_time=estimated_completion,
     )
 
 
@@ -336,59 +383,63 @@ async def create_snippet_job(
 async def get_job_status(
     job_id: uuid.UUID, user_id: uuid.UUID = Depends(get_current_user)
 ):
-    job = jobs.get(job_id)
-
+    """
+    Get the status of a snippet job.
+    
+    This endpoint retrieves the status of a specific job by its ID.
+    """
+    # Get job from Supabase
+    job = await JobRepository.get_job(job_id, user_id)
+    
     if not job:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Job not found"
         )
-
-    # Check if the job belongs to the authenticated user
-    if job["user_id"] != user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access this job",
-        )
-
-    # Get associated snippets if job is completed
-    snippet_ids = None
+    
+    # Get snippets associated with this job if completed
+    snippet_ids = []
     if job["status"] == JobStatus.COMPLETED:
-        job_snippets = [s for s in snippets.values() if s["job_id"] == job_id]
-        snippet_ids = [s["id"] for s in job_snippets]
-
+        snippets_data = await JobRepository.get_snippets_for_job(job_id)
+        snippet_ids = [uuid.UUID(snippet["id"]) for snippet in snippets_data]
+    
+    # Return response
     return JobStatusResponse(
-        job_id=job["id"],
+        job_id=job_id,
         status=job["status"],
         progress=job["progress"],
         created_at=job["created_at"],
         updated_at=job["updated_at"],
-        error_message=job["error_message"],
-        snippet_ids=snippet_ids,
+        error_message=job.get("error_message"),
+        snippet_ids=snippet_ids if snippet_ids else None,
     )
 
 
-@app.get("/snippets/{snippet_id}", response_class=FileResponse, tags=["snippets"])
+@app.get("/snippets/{snippet_id}", tags=["snippets"])
 async def get_audio_snippet(
     snippet_id: uuid.UUID, user_id: uuid.UUID = Depends(get_current_user)
 ):
-    snippet = snippets.get(snippet_id)
-
+    """
+    Get audio content for a snippet.
+    
+    This endpoint streams the audio content of a specific snippet.
+    """
+    # Get snippet from Supabase
+    snippet = await SnippetRepository.get_snippet(snippet_id, user_id)
+    
     if not snippet:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Snippet not found"
         )
-
-    # Check if the snippet belongs to the authenticated user or is public
-    if snippet["user_id"] != user_id and not snippet["is_public"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access this snippet",
-        )
-
-    # Return the audio file
-    audio_path = snippet["audio_file_path"]
-    return FileResponse(
-        path=audio_path, media_type="audio/mpeg", filename=f"{snippet['title']}.mp3"
+    
+    # Extract the storage path from the audio_url
+    # Format: https://[supabase-project].[supabase-domain]/storage/v1/object/public/snippets/USER_ID/FILENAME
+    audio_url = snippet["audio_url"]
+    
+    # Handle streaming from Supabase URL
+    # Redirect to the Supabase storage URL
+    return Response(
+        status_code=status.HTTP_307_TEMPORARY_REDIRECT,
+        headers={"Location": audio_url}
     )
 
 
@@ -400,35 +451,40 @@ async def get_audio_snippet(
 async def get_snippet_metadata(
     snippet_id: uuid.UUID, user_id: uuid.UUID = Depends(get_current_user)
 ):
-    snippet = snippets.get(snippet_id)
-
+    """
+    Get metadata for a snippet.
+    
+    This endpoint retrieves the metadata of a specific snippet by its ID.
+    """
+    # Get snippet from Supabase
+    snippet = await SnippetRepository.get_snippet(snippet_id, user_id)
+    
     if not snippet:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Snippet not found"
         )
-
-    # Check if the snippet belongs to the authenticated user or is public
-    if snippet["user_id"] != user_id and not snippet["is_public"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access this snippet",
-        )
-
-    # Get job status for the snippet
-    job = jobs.get(snippet["job_id"])
-    job_status = job["status"] if job else JobStatus.FAILED
-
+    
+    # Get the job status
+    job = await JobRepository.get_job(uuid.UUID(snippet["job_id"]), user_id)
+    
+    if not job:
+        # If job not found but snippet exists, assume it's completed
+        job_status = JobStatus.COMPLETED
+    else:
+        job_status = job["status"]
+    
+    # Return response
     return SnippetMetadataResponse(
-        id=snippet["id"],
-        user_id=snippet["user_id"],
+        id=snippet_id,
+        user_id=uuid.UUID(snippet["user_id"]),
         title=snippet["title"],
         description=snippet["description"],
         audio_url=snippet["audio_url"],
         duration_seconds=snippet["duration_seconds"],
         status=job_status,
-        spotify_track_id=snippet["spotify_track_id"],
-        spotify_artist=snippet["spotify_artist"],
-        spotify_album=snippet["spotify_album"],
+        spotify_track_id=snippet.get("spotify_track_id"),
+        spotify_artist=snippet.get("spotify_artist"),
+        spotify_album=snippet.get("spotify_album"),
         created_at=snippet["created_at"],
         updated_at=snippet["updated_at"],
     )
@@ -442,39 +498,63 @@ async def update_snippet(
     update_data: SnippetUpdateRequest,
     user_id: uuid.UUID = Depends(get_current_user),
 ):
-    snippet = snippets.get(snippet_id)
-
+    """
+    Update snippet metadata.
+    
+    This endpoint updates the metadata of a specific snippet by its ID.
+    """
+    # Get snippet from Supabase to check ownership
+    snippet = await SnippetRepository.get_snippet(snippet_id, user_id)
+    
     if not snippet:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Snippet not found"
         )
-
-    # Check if the snippet belongs to the authenticated user
-    if snippet["user_id"] != user_id:
+    
+    # Verify ownership
+    if snippet["user_id"] != str(user_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to update this snippet",
         )
-
-    # Update the provided fields
+    
+    # Prepare update data
+    now = datetime.now()
+    update_fields = {}
+    
     if update_data.title is not None:
-        snippet["title"] = update_data.title
+        update_fields["title"] = update_data.title
+    
     if update_data.description is not None:
-        snippet["description"] = update_data.description
+        update_fields["description"] = update_data.description
+    
     if update_data.tags is not None:
-        snippet["tags"] = update_data.tags
+        update_fields["tags"] = update_data.tags
+    
     if update_data.is_public is not None:
-        snippet["is_public"] = update_data.is_public
-
-    snippet["updated_at"] = datetime.now()
-
+        update_fields["is_public"] = update_data.is_public
+    
+    update_fields["updated_at"] = now.isoformat()
+    
+    # Update in Supabase
+    updated_snippet = await SnippetRepository.update_snippet(
+        snippet_id, user_id, update_fields
+    )
+    
+    if not updated_snippet:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update snippet",
+        )
+    
+    # Return response
     return SnippetUpdateResponse(
-        id=snippet["id"],
-        title=snippet["title"],
-        description=snippet["description"],
-        tags=snippet["tags"],
-        is_public=snippet["is_public"],
-        updated_at=snippet["updated_at"],
+        id=snippet_id,
+        title=updated_snippet["title"],
+        description=updated_snippet.get("description"),
+        tags=updated_snippet.get("tags", []),
+        is_public=updated_snippet.get("is_public", False),
+        updated_at=updated_snippet["updated_at"],
     )
 
 

@@ -15,4 +15,5 @@ dependencies = [
     "audioop-lts; python_version >= '3.13'",
     "python-jose>=3.4.0",
     "python-multipart>=0.0.20",
+    "supabase>=2.15.1",
 ]

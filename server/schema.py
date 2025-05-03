@@ -1,7 +1,7 @@
 from enum import Enum
 from pydantic import BaseModel
 import uuid
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 
@@ -13,8 +13,12 @@ class JobStatus(str, Enum):
 
 
 class TokenData(BaseModel):
-    user_id: uuid.UUID
-    username: str
+    id: uuid.UUID
+    email: str
+    app_metadata: Optional[Dict[str, Any]] = None
+    user_metadata: Optional[Dict[str, Any]] = None
+    aud: Optional[str] = None
+    role: Optional[str] = None
 
 
 class Token(BaseModel):

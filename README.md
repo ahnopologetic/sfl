@@ -16,8 +16,8 @@ Audio snippets for being fluent in anyting
     - [x] Save Audio Snippets
     - [x] CRUD Audio Snippets 
     - [x] Stream the audio via HTTP
-    - [ ] Connect to supabase database
-    - [ ] Connect to supabase storage
+    - [x] Connect to supabase database
+    - [x] Connect to supabase storage
     - [ ] (Multi) Job scheduling
 
 - Display
