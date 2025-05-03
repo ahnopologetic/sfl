@@ -6,6 +6,7 @@ import { Textarea } from "../ui/textarea";
 import { Card } from "../ui/card";
 import { Label } from "../ui/label";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import { snippetApi } from "@/lib/api";
 
 // Mock data for topics - would be fetched from API in a real app
 const suggestedTopics = [
@@ -34,7 +35,8 @@ export function CreateSnippetForm() {
     }, 2000);
     
     // Comment for later implementation:
-    // TODO: Connect to /snippets endpoint to create a job
+    const job = await snippetApi.createJob(requestText);
+    console.log(job);
   };
 
   const handleTopicSelect = (topic: string) => {

@@ -50,29 +50,6 @@ export function SignupForm() {
       });
 
       if (error) throw error;
-      
-      if (data?.user) {
-        // Create profile after successful signup
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            { 
-              id: data.user.id,
-              username: formData.username,
-              first_name: formData.first_name,
-              last_name: formData.last_name,
-              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-            }
-          ]);
-
-        if (profileError) {
-          console.error("Error creating profile:", profileError);
-          toast.error("Account created but profile setup failed. Please contact support.");
-        } else {
-          toast.success("Account created successfully! Please check your email to confirm your account.");
-          router.push("/login");
-        }
-      }
     } catch (error: unknown) {
       const authError = error as AuthError;
       toast.error(authError.message || "Failed to create account");

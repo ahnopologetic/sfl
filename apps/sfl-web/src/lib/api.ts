@@ -1,48 +1,43 @@
-import { createClient } from '@supabase/supabase-js';
 
 // Base URL for the deployed API
-const API_URL = 'https://sfl.onrender.com';
-
-// Initialize Supabase client (should match what you're using for auth)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+// const API_URL = 'https://sfl.onrender.com';
+const API_URL = 'http://localhost:8000';
 
 /**
  * Handles API requests with authentication
  */
 async function apiRequest(path: string, options: RequestInit = {}) {
-  // Get the current session
-  const { data: { session } } = await supabase.auth.getSession();
-  
-  if (!session?.access_token) {
-    throw new Error('Not authenticated');
-  }
-  
+  // Get the access token from cookies
+  const accessToken = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('access_token='))
+    ?.split('=')[1];
+
   // Set up headers with authentication
   const headers = {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${session.access_token}`,
+    'Authorization': accessToken ? `Bearer ${accessToken}` : '',
     ...options.headers,
   };
-  
+
   // Make the request
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
     headers,
+    credentials: 'include', // Include cookies in the request
   });
-  
+
   // Handle non-200 responses
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'An error occurred' }));
     throw new Error(error.message || 'API request failed');
   }
-  
+
   // Handle empty responses
   if (response.status === 204) {
     return null;
   }
-  
+
   // Parse JSON response
   return await response.json();
 }
@@ -63,7 +58,7 @@ export const profileApi = {
       body: JSON.stringify(profileData),
     });
   },
-  
+
   getCurrentProfile: async () => {
     return await apiRequest('/users/me');
   },
@@ -79,15 +74,15 @@ export const snippetApi = {
       body: JSON.stringify({ request_text: requestText }),
     });
   },
-  
+
   getJobStatus: async (jobId: string) => {
     return await apiRequest(`/snippets/jobs/${jobId}`);
   },
-  
+
   getSnippetMetadata: async (snippetId: string) => {
     return await apiRequest(`/snippets/${snippetId}/metadata`);
   },
-  
+
   updateSnippet: async (snippetId: string, updateData: {
     title?: string;
     description?: string;
@@ -99,7 +94,7 @@ export const snippetApi = {
       body: JSON.stringify(updateData),
     });
   },
-  
+
   // This returns the audio URL directly from the backend
   getAudioUrl: (snippetId: string) => {
     return `${API_URL}/snippets/${snippetId}`;

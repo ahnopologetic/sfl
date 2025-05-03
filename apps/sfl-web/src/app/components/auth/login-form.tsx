@@ -31,13 +31,18 @@ export function LoginForm() {
 
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: { session }, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
 
       if (error) {
         throw error;
+      }
+
+      if (session) {
+        // Save access token to cookies
+        document.cookie = `access_token=${session.access_token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Strict; Secure`;
       }
 
       // Successful login
