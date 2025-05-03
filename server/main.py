@@ -207,7 +207,7 @@ def process_snippet_job(
         JobRepository.update_job(job_id, job_data)
 
         # Generate script
-        script = generate_podcast_script(request_text)
+        podcast_script = generate_podcast_script(request_text)
 
         job_data = {
             "progress": 40,
@@ -216,7 +216,7 @@ def process_snippet_job(
         JobRepository.update_job(job_id, job_data)
 
         # Generate audio
-        audio_path = generate_podcast_audio(script, username, job_id)
+        audio_path = generate_podcast_audio(podcast_script.script, username, job_id)
 
         job_data = {
             "progress": 90,
@@ -231,11 +231,8 @@ def process_snippet_job(
             raise Exception("Failed to upload audio file")
 
         # Extract title from script (first line after # )
-        title = "Untitled Snippet"
-        for line in script.split("\n"):
-            if line.startswith("# "):
-                title = line[2:].strip()
-                break
+        title = podcast_script.title
+        description = podcast_script.description
 
         # Create snippet in database
         snippet_data = {
@@ -243,10 +240,10 @@ def process_snippet_job(
             "user_id": str(user_id),
             "job_id": str(job_id),
             "title": title,
-            "description": request_text,
+            "description": description,
             "audio_url": audio_url,
             "duration_seconds": 60,  # Approximate for now
-            "tags": [],
+            "tags": podcast_script.tags,
             "is_public": False,
             "spotify_track_id": None,
             "spotify_artist": None,

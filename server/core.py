@@ -12,9 +12,16 @@ from pydub import AudioSegment
 from settings import settings
 
 
-def generate_podcast_script(text: str) -> str:
+class PodcastScript(BaseModel):
+    title: str
+    description: str
+    script: str
+    tags: list[str]
+
+
+def generate_podcast_script(text: str) -> PodcastScript:
     openai_client = openai.OpenAI()
-    response = openai_client.responses.create(
+    response = openai_client.responses.parse(
         model="gpt-4o-mini",
         input=[
             {
@@ -82,8 +89,9 @@ Generate a script following these guidelines for the requested topic. Ensure the
             },
             {"role": "user", "content": text},
         ],
+        text_format=PodcastScript,
     )
-    return response.output_text
+    return response.output_parsed
 
 
 def parse_script(script: str) -> List[Dict[str, str]]:
