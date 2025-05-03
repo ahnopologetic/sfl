@@ -13,7 +13,6 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 
-from dotenv import load_dotenv
 from fastapi import (
     BackgroundTasks,
     Depends,
@@ -36,6 +35,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from core import generate_podcast_audio, generate_podcast_script
 from database import JobRepository, ProfileRepository, SnippetRepository
 from schema import (
+    JobListItem,
     JobStatus,
     JobStatusResponse,
     ProfileCreate,
@@ -49,12 +49,9 @@ from schema import (
     TokenData,
     SnippetListResponse,
 )
-from settings import settings
 from storage import StorageService
-from supabase_client import supabase_client, verify_jwt_token
+from supabase_client import verify_jwt_token
 
-# Load environment variables
-load_dotenv()
 
 # Configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "secret-key-for-development-only")
@@ -586,10 +583,14 @@ async def get_snippets(
     limit: int = Query(20, ge=1, le=100, description="Number of items per page"),
     status: Optional[JobStatus] = Query(None, description="Filter by snippet status"),
     search: Optional[str] = Query(None, description="Search in title and description"),
-    tags: Optional[str] = Query(None, description="Comma-separated list of tags to filter by"),
+    tags: Optional[str] = Query(
+        None, description="Comma-separated list of tags to filter by"
+    ),
     sort: Optional[str] = Query("created_at", description="Field to sort by"),
     order: Optional[str] = Query("desc", description="Sort order (asc or desc)"),
-    is_public: Optional[bool] = Query(None, description="Filter by public/private status"),
+    is_public: Optional[bool] = Query(
+        None, description="Filter by public/private status"
+    ),
     job_id: Optional[uuid.UUID] = Query(None, description="Filter snippets by job ID"),
     user: TokenData = Depends(get_current_user),
 ):
@@ -601,7 +602,7 @@ async def get_snippets(
     """
     # Parse tags if provided
     tags_list = tags.split(",") if tags else None
-    
+
     # Get snippets from database
     result = await SnippetRepository.get_snippets(
         user_id=user.id,
@@ -615,12 +616,22 @@ async def get_snippets(
         is_public=is_public,
         job_id=job_id,
     )
-    
+
     # Return response
-    return SnippetListResponse(
-        items=result["items"],
-        pagination=result["pagination"]
-    )
+    return SnippetListResponse(items=result["items"], pagination=result["pagination"])
+
+
+@app.get("/snippets/jobs", tags=["snippets"])
+async def get_jobs(
+    user: TokenData = Depends(get_current_user),
+):
+    """
+    Get all jobs for the authenticated user.
+    """
+
+    # Get jobs from Supabase
+    jobs = await JobRepository.get_jobs(user_id=user.id)
+    return [JobListItem.model_validate(job) for job in jobs]
 
 
 if __name__ == "__main__":

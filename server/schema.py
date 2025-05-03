@@ -122,3 +122,15 @@ class SnippetUpdateResponse(BaseModel):
     tags: List[str]
     is_public: bool
     updated_at: datetime
+
+
+class JobListItem(BaseModel):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    request_text: str
+    status: JobStatus
+    progress: int
+    error_message: Optional[str] = None
+    estimated_completion_time: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime

@@ -57,6 +57,17 @@ class JobRepository:
         """Create a new job in the database."""
         result = supabase_client.table("jobs").insert(job_data).execute()
         return result.data[0] if result.data else None
+    
+    @staticmethod
+    async def get_jobs(user_id: uuid.UUID) -> List[Dict[str, Any]]:
+        """Get all jobs for a user."""
+        result = (
+            supabase_client.table("jobs")
+            .select("*")
+            .eq("user_id", str(user_id))
+            .execute()
+        )
+        return result.data
 
     @staticmethod
     async def get_job(job_id: uuid.UUID, user_id: uuid.UUID) -> Dict[str, Any]:
