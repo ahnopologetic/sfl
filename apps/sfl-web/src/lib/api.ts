@@ -162,4 +162,18 @@ export const snippetApi = {
     });
   },
 
-}; 
+};
+
+export const trendingTopicsApi = {
+  retrieve: async (region: string, country: string, city: string): Promise<{
+    region: string;
+    country: string;
+    city: string;
+    topics: { title: string, description: string, image_url: string }[];
+  }> => {
+    return await apiRequest('/trending', {
+      method: 'POST',
+      body: JSON.stringify({ region, country, city }),
+    });
+  },
+};

@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { Loader2, SendHorizontal } from "lucide-react";
 import { Header } from "@/app/components/layout/header";
-import { snippetApi } from "@/lib/api";
+import { snippetApi, trendingTopicsApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import dynamic from 'next/dynamic';
-
+import { Skeleton } from "@/app/components/ui/skeleton";
+import Image from "next/image";
 // Dynamically import speech recognition with no SSR
 const DictaphoneComponent = dynamic(
   () => import('@/app/components/dictaphone-controller'),
@@ -19,8 +20,53 @@ const DictaphoneComponent = dynamic(
 export default function NewSnippetPage() {
   const [inputValue, setInputValue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingTopics, setIsLoadingTopics] = useState(true);
   const router = useRouter();
+  const [trendingTopics, setTrendingTopics] = useState<{ title: string, description: string, image_url: string }[]>([]);
 
+  useEffect(() => {
+    const fetchTrendingTopics = async () => {
+      setIsLoadingTopics(true);
+      try {
+        // Default values if location is not provided
+        const region = "New York";
+        const country = "US";
+        const city = "New York";
+
+        // // Try to get user's location (optional)
+        // if (navigator.geolocation) {
+        //   const getPosition = () => {
+        //     return new Promise<GeolocationPosition>((resolve, reject) => {
+        //       navigator.geolocation.getCurrentPosition(resolve, reject, {
+        //         timeout: 5000,
+        //         maximumAge: 0
+        //       });
+        //     });
+        //   };
+
+        //   try {
+        //     const position = await getPosition();
+        //     region = "local";
+        //     country = position.coords.latitude.toFixed(2);
+        //     city = position.coords.longitude.toFixed(2);
+        //   } catch (error) {
+        //     console.log("Location access denied or unavailable, using defaults");
+        //     console.error(error);
+        //   }
+        // }
+
+        const trendingTopics = await trendingTopicsApi.retrieve(region, country, city);
+        setTrendingTopics(trendingTopics.topics);
+      } catch (error) {
+        console.error("Error fetching trending topics:", error);
+        setTrendingTopics([]);
+      } finally {
+        setIsLoadingTopics(false);
+      }
+    };
+
+    fetchTrendingTopics();
+  }, []);
   const suggestedTopics = [
     "Space Exploration",
     "Quantum Physics",
@@ -53,6 +99,23 @@ export default function NewSnippetPage() {
   const handleTopicClick = (topic: string) => {
     setInputValue((prev) => prev ? `${prev},${topic}` : `I want to hear about ${topic}`);
   };
+
+  // Skeleton loader for trending topics
+  const TrendingTopicsSkeleton = () => (
+    <div className="flex gap-4 animate-marquee whitespace-nowrap">
+      {Array(5).fill(0).map((_, index) => (
+        <div key={index} className="flex-shrink-0 w-48">
+          <div className="relative h-32 w-full rounded-md overflow-hidden">
+            <Skeleton className="h-full w-full" />
+            <div className="absolute bottom-0 left-0 p-2 z-20 w-full">
+              <Skeleton className="h-4 w-3/4 mb-1" />
+              <Skeleton className="h-3 w-full" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <>
@@ -91,7 +154,62 @@ export default function NewSnippetPage() {
                 </Button>
               </div>
             </div>
-
+            <div className="mt-6">
+              <p className="text-sm text-muted-foreground mb-3">
+                Trending topics:
+              </p>
+              <div className="relative overflow-hidden w-full">
+                {isLoadingTopics ? (
+                  <TrendingTopicsSkeleton />
+                ) : (
+                  <div className="flex gap-4 animate-marquee whitespace-nowrap">
+                    {trendingTopics.map((topic, index) => (
+                      <div
+                        key={index}
+                        className="flex-shrink-0 w-48 cursor-pointer"
+                        onClick={() => !isSubmitting && handleTopicClick(topic.title)}
+                      >
+                        <div className="relative h-32 w-full rounded-md overflow-hidden">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10" />
+                          <Image
+                            src={`https://picsum.photos/200/300?random=${index}`}
+                            alt={topic.title}
+                            className="h-full w-full object-cover"
+                            width={200}
+                            height={300}
+                          />
+                          <div className="absolute bottom-0 left-0 p-2 z-20">
+                            <h3 className="text-sm font-medium text-white">{topic.title}</h3>
+                            <p className="text-xs text-white/80 line-clamp-2">{topic.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {/* Duplicate for seamless loop */}
+                    {trendingTopics.map((topic, index) => (
+                      <div
+                        key={`duplicate-${index}`}
+                        className="flex-shrink-0 w-48 cursor-pointer"
+                        onClick={() => !isSubmitting && handleTopicClick(topic.title)}
+                      >
+                        <div className="relative h-32 w-full rounded-md overflow-hidden">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10" />
+                          <img
+                            src={topic.image_url}
+                            alt={topic.title}
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="absolute bottom-0 left-0 p-2 z-20">
+                            <h3 className="text-sm font-medium text-white">{topic.title}</h3>
+                            <p className="text-xs text-white/80 line-clamp-2">{topic.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
             <div className="mt-6">
               <p className="text-sm text-muted-foreground mb-3">
                 Try these interesting topics:
