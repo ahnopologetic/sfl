@@ -27,7 +27,7 @@ export function Header() {
       <div className="flex w-full items-center justify-between">
         <div className="flex items-center gap-2">
           <MobileNav user={user} />
-          <Link href="/new" className="flex items-center justify-center gap-2 mx-auto">
+          <Link href={user ? "/new" : "/explore"} className="flex items-center justify-center gap-2 mx-auto">
             <Music className="h-6 w-6 text-primary" />
             <span className="font-bold">Snipfluent</span>
           </Link>
