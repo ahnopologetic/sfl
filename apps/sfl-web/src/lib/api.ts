@@ -76,6 +76,17 @@ export const profileApi = {
       body: JSON.stringify({ canvas_api_key: apiKey, canvas_url: canvasURL }),
     });
   },
+
+  createCanvasCurationJob: async () => {
+    return await apiRequest('/users/me/curate-course-topics', {
+      method: 'POST',
+    });
+  },
+
+  getCanvasCurationJob: async (): Promise<{ topics: string[] }> => {
+    return await apiRequest('/users/me/course-topics');
+  },
+
 };
 
 /**
@@ -192,3 +203,4 @@ export const trendingTopicsApi = {
     });
   },
 };
+

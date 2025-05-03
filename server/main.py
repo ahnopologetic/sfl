@@ -32,18 +32,26 @@ from fastapi.security import (
 from jose import JWTError, jwt
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from canvas import curate_course_topics
 from core import (
     extract_topics_from_text,
     generate_podcast_audio,
     generate_podcast_script,
 )
-from database import JobRepository, ProfileRepository, SnippetRepository
+from database import (
+    CuratedTopicsRepository,
+    JobRepository,
+    ProfileRepository,
+    SnippetRepository,
+)
 from schema import (
+    CuratedTopicsResponse,
     JobListItem,
     JobStatus,
     JobStatusResponse,
     ProfileCreate,
     ProfileResponse,
+    ProfileUpdateRequest,
     SnippetJobRequest,
     SnippetJobResponse,
     SnippetMetadataResponse,
@@ -680,6 +688,84 @@ async def get_trending_topics(request: TrendingTopicsRequest):
     )
 
     return response.output_parsed
+
+
+@app.put("/users/me", tags=["users"])
+async def update_profile(
+    profile: ProfileUpdateRequest,
+    user: TokenData = Depends(get_current_user),
+):
+    """
+    Update profile metadata.
+    """
+    # Get profile from Supabase to check ownership
+    existing_profile = await ProfileRepository.get_profile(user.id)
+
+    if not existing_profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found"
+        )
+
+    # Verify ownership
+    if existing_profile["id"] != str(user.id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this profile",
+        )
+    update_fields = {}
+
+    if profile.username is not None:
+        update_fields["username"] = profile.username
+
+    if profile.last_name is not None:
+        update_fields["last_name"] = profile.last_name
+
+    if profile.first_name is not None:
+        update_fields["first_name"] = profile.first_name
+
+    if profile.middle_name is not None:
+        update_fields["middle_name"] = profile.middle_name
+
+    if profile.timezone is not None:
+        update_fields["timezone"] = profile.timezone
+
+    if profile.canvas_api_key is not None:
+        update_fields["canvas_api_key"] = profile.canvas_api_key
+
+    if profile.canvas_url is not None:
+        update_fields["canvas_url"] = profile.canvas_url
+
+    # Update in Supabase
+    updated_profile = await ProfileRepository.update_profile(user.id, update_fields)
+
+    if not updated_profile:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update profile",
+        )
+
+    return ProfileResponse(**updated_profile)
+
+
+@app.post("/users/me/curate-course-topics", tags=["users"])
+async def execute_curate_course_topics(
+    user: TokenData = Depends(get_current_user),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
+):
+    """
+    Curate course topics for the authenticated user.
+    """
+    background_tasks.add_task(curate_course_topics, user.id)
+    return {"message": "Curating course topics in the background"}
+
+
+@app.get("/users/me/course-topics", tags=["users"])
+async def get_course_topics(user: TokenData = Depends(get_current_user)):
+    """
+    Get course topics for the authenticated user.
+    """
+    curatedTopics = await CuratedTopicsRepository.get_curated_topics(user.id)
+    return CuratedTopicsResponse(topics=[topic["topic"] for topic in curatedTopics])
 
 
 if __name__ == "__main__":

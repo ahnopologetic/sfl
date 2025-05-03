@@ -18,7 +18,7 @@ Audio snippets for being fluent in anyting
     - [x] Stream the audio via HTTP
     - [x] Connect to supabase database
     - [x] Connect to supabase storage
-    - [ ] (Multi) Job scheduling
+    - [x] (Multi) Job scheduling
 
 - Display
     - [x] Login Page
@@ -35,5 +35,5 @@ Audio snippets for being fluent in anyting
 
 - Deploy
     - [x] web app
-    - [ ] BE
+    - [x] BE
     

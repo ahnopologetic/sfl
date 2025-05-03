@@ -66,7 +66,11 @@ const BOSTON_SCHOOLS: SchoolCanvasList = {
     ]
 }
 
-const CanvasConnector = () => {
+type CanvasConnectorProps = {
+    onSave: () => void;
+}
+
+const CanvasConnector = ({ onSave }: CanvasConnectorProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [schoolCanvasURL, setSchoolCanvasURL] = useState("");
     const [apiKey, setApiKey] = useState("");
@@ -77,8 +81,10 @@ const CanvasConnector = () => {
 
     const handleSave = async () => {
         await profileApi.updateCanvasAPIKey(apiKey, schoolCanvasURL);
-        router.refresh();
+        await profileApi.createCanvasCurationJob();
         setIsOpen(false);
+        router.refresh();
+        onSave();
     };
 
     return (

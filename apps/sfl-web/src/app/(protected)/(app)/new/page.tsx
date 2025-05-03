@@ -33,6 +33,8 @@ export default function NewSnippetPage() {
     canvas_url?: string;
   } | null>(null);
   const [trendingTopics, setTrendingTopics] = useState<{ title: string, description: string, image_url: string }[]>([]);
+  const [isCanvasLoading, setIsCanvasLoading] = useState<boolean>(false);
+  const [canvasCurationJob, setCanvasCurationJob] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchTrendingTopics = async () => {
@@ -52,13 +54,33 @@ export default function NewSnippetPage() {
         setIsLoadingTopics(false);
       }
     };
+    
     const fetchProfile = async () => {
-      const profile = await profileApi.getCurrentProfile();
-      setProfile(profile);
+      try {
+        const profile = await profileApi.getCurrentProfile();
+        setProfile(profile);
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      }
+    };
+    
+    const fetchCanvasCurationJob = async () => {
+      try {
+        const canvasCurationJob = await profileApi.getCanvasCurationJob();
+        setCanvasCurationJob(canvasCurationJob.topics);
+      } catch (error) {
+        console.error("Error fetching canvas curation job:", error);
+      } finally {
+        setIsCanvasLoading(false);
+      }
     };
 
-    fetchTrendingTopics();
-    fetchProfile();
+    // Execute all fetch operations in parallel
+    Promise.all([
+      fetchTrendingTopics(),
+      fetchProfile(),
+      fetchCanvasCurationJob()
+    ]);
   }, []);
   const suggestedTopics = [
     "Space Exploration",
@@ -116,8 +138,8 @@ export default function NewSnippetPage() {
       <main className="flex flex-col items-center justify-center min-h-screen p-4">
         <div className="w-full max-w-2xl mx-auto space-y-8">
           {
-            !profile?.canvas_api_key && (
-              <CanvasConnector />
+            profile && !profile?.canvas_api_key && (
+              <CanvasConnector onSave={() => setIsCanvasLoading(true)} />
             )
           }
           <h1 className="text-3xl font-bold text-center break-words">
@@ -152,6 +174,39 @@ export default function NewSnippetPage() {
                 </Button>
               </div>
             </div>
+            {
+              isCanvasLoading && (
+                <div className="mt-6">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Loading Canvas topics...
+                  </p>
+                  <TrendingTopicsSkeleton />
+                </div>
+              )
+            }
+            {
+              canvasCurationJob.length > 0 && !isCanvasLoading && (
+                <div className="mt-6">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Topics from your courses:
+                  </p>
+                  <div className="relative overflow-hidden w-full">
+                    <div className="flex gap-2 animate-marquee whitespace-nowrap">
+                      {canvasCurationJob.map((topic) => (
+                        <Badge key={topic} variant="secondary" className="cursor-pointer hover:bg-secondary/90 transition-colors">
+                          {topic}
+                        </Badge>
+                      ))}
+                      {canvasCurationJob.map((topic) => (
+                        <Badge key={`duplicate-${topic}`} variant="secondary" className="cursor-pointer hover:bg-secondary/90 transition-colors">
+                          {topic}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )
+            }
             <div className="mt-6">
               <p className="text-sm text-muted-foreground mb-3">
                 Trending topics:

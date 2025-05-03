@@ -32,6 +32,18 @@ class ProfileCreate(BaseModel):
     first_name: str
     middle_name: Optional[str] = None
     timezone: str
+    canvas_api_key: Optional[str] = None
+    canvas_url: Optional[str] = None
+
+
+class ProfileUpdateRequest(BaseModel):
+    username: Optional[str] = None
+    last_name: Optional[str] = None
+    first_name: Optional[str] = None
+    middle_name: Optional[str] = None
+    timezone: Optional[str] = None
+    canvas_api_key: Optional[str] = None
+    canvas_url: Optional[str] = None
 
 
 class ProfileResponse(BaseModel):
@@ -41,6 +53,8 @@ class ProfileResponse(BaseModel):
     first_name: str
     middle_name: Optional[str] = None
     timezone: str
+    canvas_api_key: Optional[str] = None
+    canvas_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -152,3 +166,7 @@ class TrendingTopicsResponse(BaseModel):
     country: str
     region: str
     city: str
+
+
+class CuratedTopicsResponse(BaseModel):
+    topics: list[str]
