@@ -37,7 +37,7 @@ export function SignupForm() {
       const supabase = createClient();
 
       // First, sign up the user
-      const { error } = await supabase.auth.signUp({
+      const { error, data } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -50,6 +50,13 @@ export function SignupForm() {
       });
 
       if (error) throw error;
+
+      await supabase.from('profiles').insert({
+        id: data.user?.id,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        username: formData.username,
+      });
     } catch (error: unknown) {
       const authError = error as AuthError;
       toast.error(authError.message || "Failed to create account");
