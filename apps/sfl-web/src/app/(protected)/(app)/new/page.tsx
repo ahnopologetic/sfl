@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import dynamic from 'next/dynamic';
 import { Skeleton } from "@/app/components/ui/skeleton";
 import Image from "next/image";
+import CanvasConnector from "@/app/components/canvas-connector";
 // Dynamically import speech recognition with no SSR
 const DictaphoneComponent = dynamic(
   () => import('@/app/components/dictaphone-controller'),
@@ -122,6 +123,7 @@ export default function NewSnippetPage() {
       <Header />
       <main className="flex flex-col items-center justify-center min-h-screen p-4">
         <div className="w-full max-w-2xl mx-auto space-y-8">
+          <CanvasConnector />
           <h1 className="text-3xl font-bold text-center break-words">
             What do you want to hear about?
           </h1>
