@@ -52,6 +52,9 @@ from schema import (
     Token,
     TokenData,
     SnippetListResponse,
+    TrendingTopic,
+    TrendingTopicsRequest,
+    TrendingTopicsResponse,
 )
 from storage import StorageService
 from supabase_client import verify_jwt_token
@@ -648,6 +651,35 @@ async def get_jobs(
     # Get jobs from Supabase
     jobs = await JobRepository.get_jobs(user_id=user.id)
     return [JobListItem.model_validate(job) for job in jobs]
+
+
+@app.post("/trending", tags=["trending"])
+async def get_trending_topics(request: TrendingTopicsRequest):
+    """
+    Get trending snippets.
+    """
+    from openai import OpenAI
+
+    client = OpenAI()
+
+    response = client.responses.parse(
+        model="gpt-4.1",
+        tools=[
+            {
+                "type": "web_search_preview",
+                "user_location": {
+                    "type": "approximate",
+                    "country": request.country,
+                    "region": request.region,
+                    "city": request.city,
+                },
+            }
+        ],
+        input="What is trending in the news today?",
+        text_format=TrendingTopicsResponse,
+    )
+
+    return response.output_parsed
 
 
 if __name__ == "__main__":

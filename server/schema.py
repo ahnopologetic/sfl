@@ -134,3 +134,21 @@ class JobListItem(BaseModel):
     estimated_completion_time: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
+
+
+class TrendingTopicsRequest(BaseModel):
+    country: str
+    region: str
+    city: str
+
+
+class TrendingTopic(BaseModel):
+    title: str
+    description: str
+
+
+class TrendingTopicsResponse(BaseModel):
+    topics: list[TrendingTopic]
+    country: str
+    region: str
+    city: str
