@@ -169,7 +169,7 @@ async def process_snippet_job(
         job_data = {
             "status": JobStatus.PROCESSING,
             "progress": 10,
-            "updated_at": datetime.now(),
+            "updated_at": datetime.now().isoformat(),
         }
         
         await JobRepository.update_job(job_id, job_data)
@@ -179,7 +179,7 @@ async def process_snippet_job(
         
         job_data = {
             "progress": 40,
-            "updated_at": datetime.now(),
+            "updated_at": datetime.now().isoformat(),
         }
         await JobRepository.update_job(job_id, job_data)
         
@@ -188,7 +188,7 @@ async def process_snippet_job(
         
         job_data = {
             "progress": 90,
-            "updated_at": datetime.now(),
+            "updated_at": datetime.now().isoformat(),
         }
         await JobRepository.update_job(job_id, job_data)
         
@@ -219,8 +219,8 @@ async def process_snippet_job(
             "spotify_track_id": None,
             "spotify_artist": None,
             "spotify_album": None,
-            "created_at": datetime.now(),
-            "updated_at": datetime.now(),
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat(),
         }
         
         snippet = await SnippetRepository.create_snippet(snippet_data)
@@ -229,7 +229,7 @@ async def process_snippet_job(
         job_data = {
             "status": JobStatus.COMPLETED,
             "progress": 100,
-            "updated_at": datetime.now(),
+            "updated_at": datetime.now().isoformat(),
         }
         await JobRepository.update_job(job_id, job_data)
         
@@ -242,7 +242,7 @@ async def process_snippet_job(
         job_data = {
             "status": JobStatus.FAILED,
             "error_message": str(e),
-            "updated_at": datetime.now(),
+            "updated_at": datetime.now().isoformat(),
         }
         await JobRepository.update_job(job_id, job_data)
 
