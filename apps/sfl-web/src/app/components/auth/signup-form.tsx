@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -11,7 +10,6 @@ import toast from "react-hot-toast";
 import type { AuthError } from "@supabase/supabase-js";
 
 export function SignupForm() {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     first_name: "",
@@ -35,9 +33,9 @@ export function SignupForm() {
     try {
       // Create Supabase client
       const supabase = createClient();
-      
+
       // First, sign up the user
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -66,7 +64,7 @@ export function SignupForm() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
       });
-      
+
       if (error) throw error;
     } catch (error: unknown) {
       const authError = error as AuthError;
@@ -83,7 +81,7 @@ export function SignupForm() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
       });
-      
+
       if (error) throw error;
     } catch (error: unknown) {
       const authError = error as AuthError;
@@ -193,17 +191,17 @@ export function SignupForm() {
         <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-muted"></div>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <Button 
-          variant="outline" 
-          type="button" 
+        <Button
+          variant="outline"
+          type="button"
           disabled={isLoading}
           onClick={handleGoogleSignIn}
         >
           Google
         </Button>
-        <Button 
-          variant="outline" 
-          type="button" 
+        <Button
+          variant="outline"
+          type="button"
           disabled={isLoading}
           onClick={handleGithubSignIn}
         >

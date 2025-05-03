@@ -67,8 +67,8 @@ export const profileApi = {
  * Snippet job API functions
  */
 export const snippetApi = {
-  listSnippets: async (filters?: { 
-    status?: string; 
+  listSnippets: async (filters?: {
+    status?: string;
     is_public?: boolean;
     tags?: string[];
     search?: string;
@@ -100,7 +100,7 @@ export const snippetApi = {
     };
   }> => {
     const queryParams = new URLSearchParams();
-    
+
     if (filters) {
       if (filters.status) queryParams.append('status', filters.status);
       if (filters.is_public !== undefined) queryParams.append('is_public', filters.is_public.toString());
@@ -114,10 +114,10 @@ export const snippetApi = {
       if (filters.order) queryParams.append('order', filters.order);
       if (filters.job_id) queryParams.append('job_id', filters.job_id);
     }
-    
+
     const queryString = queryParams.toString();
     const endpoint = queryString ? `/snippets?${queryString}` : '/snippets';
-    
+
     return await apiRequest(endpoint);
   },
 
@@ -126,6 +126,20 @@ export const snippetApi = {
       method: 'POST',
       body: JSON.stringify({ request_text: requestText }),
     });
+  },
+
+  listJobs: async (): Promise<{
+    id: string;
+    user_id: string;
+    request_text: string;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    progress: number;
+    error_message?: string;
+    estimated_completion_time?: string;
+    created_at: string;
+    updated_at: string;
+  }[]> => {
+    return await apiRequest('/snippets/jobs');
   },
 
   getJobStatus: async (jobId: string) => {

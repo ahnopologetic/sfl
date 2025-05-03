@@ -19,7 +19,7 @@ const snippets = [
     id: "1",
     title: "The Science of Black Holes",
     description: "Learn about the formation and mysteries of black holes",
-    duration: 312, // in seconds
+    duration_seconds: 312, // in seconds
     tags: ["Science", "Physics", "Space"],
     created_at: new Date("2023-09-15").toISOString(),
     is_public: true,
@@ -28,7 +28,7 @@ const snippets = [
     id: "2",
     title: "Introduction to Machine Learning",
     description: "A beginner-friendly overview of machine learning concepts",
-    duration: 420, // in seconds
+    duration_seconds: 420, // in seconds
     tags: ["Technology", "AI", "Programming"],
     created_at: new Date("2023-10-05").toISOString(),
     is_public: true,
@@ -37,7 +37,7 @@ const snippets = [
     id: "3",
     title: "The History of the Roman Empire",
     description: "Explore the rise and fall of one of history's greatest empires",
-    duration: 550, // in seconds
+    duration_seconds: 550, // in seconds
     tags: ["History", "Ancient Civilizations"],
     created_at: new Date("2023-11-22").toISOString(),
     is_public: true,
@@ -46,7 +46,7 @@ const snippets = [
     id: "4",
     title: "Understanding Blockchain Technology",
     description: "The fundamentals of blockchain explained simply",
-    duration: 380, // in seconds
+    duration_seconds: 380, // in seconds
     tags: ["Technology", "Cryptocurrency", "Finance"],
     created_at: new Date("2023-12-01").toISOString(),
     is_public: true,
@@ -55,7 +55,7 @@ const snippets = [
     id: "5",
     title: "Modern Art Movements",
     description: "A journey through the major movements in modern art",
-    duration: 480, // in seconds
+    duration_seconds: 480, // in seconds
     tags: ["Arts", "Culture", "History"],
     created_at: new Date("2024-01-10").toISOString(),
     is_public: true,
@@ -64,7 +64,7 @@ const snippets = [
     id: "6",
     title: "The Science of Sleep",
     description: "Understanding how sleep works and its importance for health",
-    duration: 410, // in seconds
+    duration_seconds: 410, // in seconds
     tags: ["Health", "Science", "Wellness"],
     created_at: new Date("2024-02-05").toISOString(),
     is_public: true,

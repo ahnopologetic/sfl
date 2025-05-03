@@ -27,12 +27,23 @@ export type Snippet = {
   updated_at: string;
 };
 
+export type Job = {
+  id: string;
+  user_id: string;
+  request_text: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  error_message?: string;
+  estimated_completion_time?: string;
+  created_at: string;
+  updated_at: string;
+};
 
 export default function MySnippetsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [mySnippets, setMySnippets] = useState<Snippet[]>([]);
-  const [pendingSnippets, setPendingSnippets] = useState<any[]>([]);
+  const [pendingSnippets, setPendingSnippets] = useState<Job[]>([]);
 
   useEffect(() => {
     const getUser = async () => {
@@ -51,10 +62,8 @@ export default function MySnippetsPage() {
       setMySnippets(snippets.items || []);
     };
     const fetchPendingSnippets = async () => {
-      const pendingSnippets = await snippetApi.listSnippets({
-        status: 'processing',
-      });
-      setPendingSnippets(pendingSnippets.items || []);
+      const pendingSnippets = await snippetApi.listJobs();
+      setPendingSnippets(pendingSnippets || []);
     };
     fetchSnippets();
     fetchPendingSnippets();
@@ -121,7 +130,7 @@ export default function MySnippetsPage() {
           <TabsContent value="in-progress">
             {pendingSnippets.length > 0 ? (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {pendingSnippets.map((job) => (
+                {pendingSnippets.map((job: Job) => (
                   <div
                     key={job.id}
                     className="rounded-lg border bg-card p-6 shadow-sm"
