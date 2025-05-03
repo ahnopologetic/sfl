@@ -129,7 +129,7 @@ export function AudioPlayer({ audioUrl }: AudioPlayerProps) {
       </div>
 
       {/* Controls */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-col md:flex-row gap-2">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"

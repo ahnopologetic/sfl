@@ -67,6 +67,60 @@ export const profileApi = {
  * Snippet job API functions
  */
 export const snippetApi = {
+  listSnippets: async (filters?: { 
+    status?: string; 
+    is_public?: boolean;
+    tags?: string[];
+    search?: string;
+    page?: number;
+    limit?: number;
+    sort?: string;
+    order?: 'asc' | 'desc';
+    job_id?: string;
+  }): Promise<{
+    items: Array<{
+      id: string;
+      title: string;
+      description: string;
+      tags: string[];
+      duration_seconds: number;
+      is_public: boolean;
+      spotify_track_id?: string;
+      spotify_artist?: string;
+      spotify_album?: string;
+      job_id: string;
+      created_at: string;
+      updated_at: string;
+    }>;
+    pagination: {
+      total: number;
+      page: number;
+      limit: number;
+      total_pages: number;
+    };
+  }> => {
+    const queryParams = new URLSearchParams();
+    
+    if (filters) {
+      if (filters.status) queryParams.append('status', filters.status);
+      if (filters.is_public !== undefined) queryParams.append('is_public', filters.is_public.toString());
+      if (filters.tags && filters.tags.length > 0) {
+        filters.tags.forEach(tag => queryParams.append('tags', tag));
+      }
+      if (filters.search) queryParams.append('search', filters.search);
+      if (filters.page) queryParams.append('page', filters.page.toString());
+      if (filters.limit) queryParams.append('limit', filters.limit.toString());
+      if (filters.sort) queryParams.append('sort', filters.sort);
+      if (filters.order) queryParams.append('order', filters.order);
+      if (filters.job_id) queryParams.append('job_id', filters.job_id);
+    }
+    
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/snippets?${queryString}` : '/snippets';
+    
+    return await apiRequest(endpoint);
+  },
+
   createJob: async (requestText: string) => {
     return await apiRequest('/snippets', {
       method: 'POST',
@@ -94,8 +148,4 @@ export const snippetApi = {
     });
   },
 
-  // This returns the audio URL directly from the backend
-  getAudioUrl: (snippetId: string) => {
-    return `${API_URL}/snippets/${snippetId}`;
-  },
 }; 

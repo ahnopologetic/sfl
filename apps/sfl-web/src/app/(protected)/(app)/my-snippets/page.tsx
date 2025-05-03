@@ -10,52 +10,29 @@ import { Plus } from "lucide-react";
 import Link from "next/link";
 import { createClient } from '@/utils/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { snippetApi } from '@/lib/api';
 
-// Mock data - would be fetched from API in a real app
-const mySnippets = [
-  {
-    id: "1",
-    title: "The Science of Black Holes",
-    description: "Learn about the formation and mysteries of black holes",
-    duration: 312, // in seconds
-    tags: ["Science", "Physics", "Space"],
-    created_at: new Date("2023-09-15").toISOString(),
-    is_public: true,
-  },
-  {
-    id: "2",
-    title: "Introduction to Machine Learning",
-    description: "A beginner-friendly overview of machine learning concepts",
-    duration: 420, // in seconds
-    tags: ["Technology", "AI", "Programming"],
-    created_at: new Date("2023-10-05").toISOString(),
-    is_public: false,
-  },
-  {
-    id: "3",
-    title: "The History of the Roman Empire",
-    description: "Explore the rise and fall of one of history's greatest empires",
-    duration: 550, // in seconds
-    tags: ["History", "Ancient Civilizations"],
-    created_at: new Date("2023-11-22").toISOString(),
-    is_public: true,
-  },
-];
+export type Snippet = {
+  id: string;
+  title: string;
+  description: string;
+  duration_seconds: number;
+  tags: string[];
+  created_at: string;
+  is_public: boolean;
+  spotify_track_id?: string;
+  spotify_artist?: string;
+  spotify_album?: string;
+  job_id: string;
+  updated_at: string;
+};
 
-// Mock data for in-progress snippets
-const pendingSnippets = [
-  {
-    id: "job-1",
-    request_text: "Explain quantum computing for beginners",
-    status: "processing",
-    progress: 65,
-    created_at: new Date("2024-03-15").toISOString(),
-  },
-];
 
 export default function MySnippetsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mySnippets, setMySnippets] = useState<Snippet[]>([]);
+  const [pendingSnippets, setPendingSnippets] = useState<any[]>([]);
 
   useEffect(() => {
     const getUser = async () => {
@@ -66,6 +43,21 @@ export default function MySnippetsPage() {
     };
 
     getUser();
+  }, []);
+
+  useEffect(() => {
+    const fetchSnippets = async () => {
+      const snippets = await snippetApi.listSnippets();
+      setMySnippets(snippets.items || []);
+    };
+    const fetchPendingSnippets = async () => {
+      const pendingSnippets = await snippetApi.listSnippets({
+        status: 'processing',
+      });
+      setPendingSnippets(pendingSnippets.items || []);
+    };
+    fetchSnippets();
+    fetchPendingSnippets();
   }, []);
 
   if (loading) {
@@ -105,11 +97,11 @@ export default function MySnippetsPage() {
             <TabsTrigger value="completed">Completed</TabsTrigger>
             <TabsTrigger value="in-progress">In Progress</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="completed">
             {mySnippets.length > 0 ? (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {mySnippets.map((snippet) => (
+                {mySnippets.map((snippet: Snippet) => (
                   <SnippetCard key={snippet.id} snippet={snippet} />
                 ))}
               </div>
@@ -125,7 +117,7 @@ export default function MySnippetsPage() {
               </div>
             )}
           </TabsContent>
-          
+
           <TabsContent value="in-progress">
             {pendingSnippets.length > 0 ? (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

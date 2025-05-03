@@ -9,7 +9,7 @@ interface Snippet {
   id: string;
   title: string;
   description: string;
-  duration: number; // in seconds
+  duration_seconds: number; // in seconds
   tags: string[];
   created_at: string;
   is_public: boolean;
@@ -39,7 +39,7 @@ export function SnippetCard({ snippet }: SnippetCardProps) {
         <div className="mt-4 flex items-center gap-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            <span>{formatDuration(snippet.duration)}</span>
+            <span>{formatDuration(snippet.duration_seconds)}</span>
           </div>
           <span>•</span>
           <div>
