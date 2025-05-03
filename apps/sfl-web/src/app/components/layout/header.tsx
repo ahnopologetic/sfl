@@ -52,12 +52,12 @@ export function Header() {
             <>
               {!user ? (
                 <>
-                  <Link href="/auth/login">
+                  <Link href="/login">
                     <Button variant="ghost" size="sm">
                       Sign In
                     </Button>
                   </Link>
-                  <Link href="/auth/signup">
+                  <Link href="/signup">
                     <Button size="sm">Sign Up</Button>
                   </Link>
                 </>

@@ -47,7 +47,7 @@ export function LoginForm() {
 
       // Successful login
       toast.success("Logged in successfully!");
-      router.push("/dashboard");
+      router.push("/new");
       router.refresh();
     } catch (error: unknown) {
       const authError = error as AuthError;
