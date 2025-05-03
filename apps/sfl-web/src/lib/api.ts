@@ -1,7 +1,6 @@
 
 // Base URL for the deployed API
-// const API_URL = 'https://sfl.onrender.com';
-const API_URL = 'http://localhost:8000';
+const API_URL = process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : 'https://sfl.onrender.com';
 
 /**
  * Handles API requests with authentication
