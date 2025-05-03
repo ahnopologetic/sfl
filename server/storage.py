@@ -29,7 +29,7 @@ class StorageService:
             print(f"Error initializing storage: {e}")
     
     @classmethod
-    async def upload_file(cls, file_path: str, user_id: uuid.UUID) -> Tuple[bool, Optional[str]]:
+    def upload_file(cls, file_path: str, user_id: uuid.UUID) -> Tuple[bool, Optional[str]]:
         """
         Upload a file to Supabase Storage.
         

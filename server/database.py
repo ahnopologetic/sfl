@@ -82,7 +82,7 @@ class JobRepository:
         return result.data[0] if result.data else None
 
     @staticmethod
-    async def update_job(job_id: uuid.UUID, job_data: Dict[str, Any]) -> Dict[str, Any]:
+    def update_job(job_id: uuid.UUID, job_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update a job by ID."""
         result = (
             supabase_client.table("jobs")
@@ -108,7 +108,7 @@ class SnippetRepository:
     """Repository for snippet operations."""
 
     @staticmethod
-    async def create_snippet(snippet_data: Dict[str, Any]) -> Dict[str, Any]:
+    def create_snippet(snippet_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new snippet in the database."""
         result = supabase_client.table("snippets").insert(snippet_data).execute()
         return result.data[0] if result.data else None

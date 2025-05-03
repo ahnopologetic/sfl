@@ -1,7 +1,7 @@
-import { AppLayout } from "../../../components/layout/app-layout";
-import { SnippetCard } from "../../../components/snippets/snippet-card";
-import { CategoryFilter } from "../../../components/snippets/category-filter";
-import { SearchBar } from "../../../components/snippets/search-bar";
+import { AppLayout } from "../../components/layout/app-layout";
+import { SnippetCard } from "../../components/snippets/snippet-card";
+import { CategoryFilter } from "../../components/snippets/category-filter";
+import { SearchBar } from "../../components/snippets/search-bar";
 
 // Mock data - would be fetched from API in a real app
 const categories = [

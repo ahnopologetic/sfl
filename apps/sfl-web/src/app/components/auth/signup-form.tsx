@@ -8,9 +8,10 @@ import { Checkbox } from "../ui/checkbox";
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
 import type { AuthError } from "@supabase/supabase-js";
-
+import { useRouter } from "next/navigation";
 export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -54,6 +55,8 @@ export function SignupForm() {
       console.error("Signup error:", authError);
     } finally {
       setIsLoading(false);
+      toast.success('Account created successfully. Checking your email for verification...');
+      router.push('/login');
     }
   };
 

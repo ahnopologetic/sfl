@@ -32,7 +32,11 @@ from fastapi.security import (
 from jose import JWTError, jwt
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from core import generate_podcast_audio, generate_podcast_script
+from core import (
+    extract_topics_from_text,
+    generate_podcast_audio,
+    generate_podcast_script,
+)
 from database import JobRepository, ProfileRepository, SnippetRepository
 from schema import (
     JobListItem,
@@ -173,7 +177,7 @@ async def startup_event():
 
 
 # Helper functions for job and snippet processing
-async def process_snippet_job(
+def process_snippet_job(
     job_id: uuid.UUID,
     request_text: str,
     user_id: uuid.UUID,
@@ -189,7 +193,7 @@ async def process_snippet_job(
             "updated_at": datetime.now().isoformat(),
         }
 
-        await JobRepository.update_job(job_id, job_data)
+        JobRepository.update_job(job_id, job_data)
 
         # Generate script
         script = generate_podcast_script(request_text)
@@ -198,7 +202,7 @@ async def process_snippet_job(
             "progress": 40,
             "updated_at": datetime.now().isoformat(),
         }
-        await JobRepository.update_job(job_id, job_data)
+        JobRepository.update_job(job_id, job_data)
 
         # Generate audio
         audio_path = generate_podcast_audio(script, username, job_id)
@@ -207,10 +211,10 @@ async def process_snippet_job(
             "progress": 90,
             "updated_at": datetime.now().isoformat(),
         }
-        await JobRepository.update_job(job_id, job_data)
+        JobRepository.update_job(job_id, job_data)
 
         # Upload audio to Supabase Storage
-        success, audio_url = await StorageService.upload_file(audio_path, user_id)
+        success, audio_url = StorageService.upload_file(audio_path, user_id)
 
         if not success:
             raise Exception("Failed to upload audio file")
@@ -240,7 +244,7 @@ async def process_snippet_job(
             "updated_at": datetime.now().isoformat(),
         }
 
-        snippet = await SnippetRepository.create_snippet(snippet_data)
+        SnippetRepository.create_snippet(snippet_data)
 
         # Update job as completed
         job_data = {
@@ -248,7 +252,7 @@ async def process_snippet_job(
             "progress": 100,
             "updated_at": datetime.now().isoformat(),
         }
-        await JobRepository.update_job(job_id, job_data)
+        JobRepository.update_job(job_id, job_data)
 
         # Clean up local file
         if os.path.exists(audio_path):
@@ -261,7 +265,7 @@ async def process_snippet_job(
             "error_message": str(e),
             "updated_at": datetime.now().isoformat(),
         }
-        await JobRepository.update_job(job_id, job_data)
+        JobRepository.update_job(job_id, job_data)
 
 
 # API Endpoints
@@ -337,7 +341,7 @@ async def get_user_profile(user: TokenData = Depends(get_current_user)):
 
 @app.post(
     "/snippets",
-    response_model=SnippetJobResponse,
+    response_model=list[SnippetJobResponse],
     status_code=status.HTTP_202_ACCEPTED,
     tags=["snippets"],
 )
@@ -352,51 +356,63 @@ async def create_snippet_job(
     This endpoint creates a new job to process the user's snippet request.
     """
     # Create a new job in the database
-    job_id = uuid.uuid4()
-    now = datetime.now()
-    estimated_completion = now + timedelta(
-        minutes=2
-    )  # Estimate 2 minutes for processing
 
-    job_data = {
-        "id": str(job_id),
-        "user_id": str(user.id),
-        "request_text": request.request_text,
-        "status": JobStatus.PENDING,
-        "progress": 0,
-        "estimated_completion_time": estimated_completion.isoformat(),
-        "created_at": now.isoformat(),
-        "updated_at": now.isoformat(),
-    }
+    topics = extract_topics_from_text(request.request_text)
 
-    # Create job in Supabase
-    created_job = await JobRepository.create_job(job_data)
-
-    if not created_job:
+    if not topics:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create job",
+            status_code=status.HTTP_400_BAD_REQUEST, detail="No topics found"
         )
 
-    # Also update in-memory for backward compatibility
-    jobs[job_id] = job_data
+    current_jobs = {}
 
-    # Start processing in the background
-    background_tasks.add_task(
-        process_snippet_job,
-        job_id,
-        request.request_text,
-        user.id,
-        user.email,
-        background_tasks,
-    )
+    for topic in topics:
+        job_id = uuid.uuid4()
+        now = datetime.now()
+        estimated_completion = now + timedelta(
+            minutes=2
+        )  # Estimate 2 minutes for processing
+        job_data = {
+            "id": str(job_id),
+            "user_id": str(user.id),
+            "request_text": topic,
+            "status": JobStatus.PENDING,
+            "progress": 0,
+            "estimated_completion_time": estimated_completion.isoformat(),
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+        }
 
-    # Return response
-    return SnippetJobResponse(
-        job_ids=[job_id],
-        status=JobStatus.PENDING,
-        estimated_completion_time=estimated_completion,
-    )
+        # Create job in Supabase
+        created_job = await JobRepository.create_job(job_data)
+
+        if not created_job:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create job",
+            )
+
+        # Also update in-memory for backward compatibility
+        current_jobs[job_id] = job_data
+
+        # Start processing in the background
+        background_tasks.add_task(
+            process_snippet_job,
+            job_id,
+            request.request_text,
+            user.id,
+            user.email,
+            background_tasks,
+        )
+
+    return [
+        SnippetJobResponse(
+            job_ids=[job_id],
+            status=JobStatus.PENDING,
+            estimated_completion_time=estimated_completion,
+        )
+        for job_id in current_jobs.keys()
+    ]
 
 
 @app.get("/snippets/jobs/{job_id}", response_model=JobStatusResponse, tags=["snippets"])
@@ -621,7 +637,7 @@ async def get_snippets(
     return SnippetListResponse(items=result["items"], pagination=result["pagination"])
 
 
-@app.get("/snippets/jobs", tags=["snippets"])
+@app.get("/jobs", tags=["snippets"])
 async def get_jobs(
     user: TokenData = Depends(get_current_user),
 ):

@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/ta
 import { snippetApi } from '@/lib/api';
 import { createClient } from '@/utils/supabase/client';
 import type { User } from '@supabase/supabase-js';
-import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from 'react';
 
@@ -90,12 +89,6 @@ export default function MySnippetsPage() {
               Welcome, {user?.user_metadata?.first_name || user?.email}! Manage your personal collection of learning snippets.
             </p>
           </div>
-          <Link href="/create">
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create New
-            </Button>
-          </Link>
         </div>
 
         <div className="mb-8">

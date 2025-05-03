@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
-import { SendHorizontal } from "lucide-react";
+import { Loader2, SendHorizontal } from "lucide-react";
 import { Header } from "@/app/components/layout/header";
 import { snippetApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -18,6 +18,7 @@ const DictaphoneComponent = dynamic(
 
 export default function NewSnippetPage() {
   const [inputValue, setInputValue] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
   const suggestedTopics = [
@@ -35,10 +36,17 @@ export default function NewSnippetPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const job = await snippetApi.createJob(inputValue);
-    if (job) {
-      setInputValue("");
-      router.push(`/my-snippets`);
+    setIsSubmitting(true);
+    try {
+      const job = await snippetApi.createJob(inputValue);
+      if (job) {
+        setInputValue("");
+        router.push(`/my-snippets`);
+      }
+    } catch (error) {
+      console.error("Error creating job:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -51,7 +59,7 @@ export default function NewSnippetPage() {
       <Header />
       <main className="flex flex-col items-center justify-center min-h-screen p-4">
         <div className="w-full max-w-2xl mx-auto space-y-8">
-          <h1 className="text-3xl font-bold text-center">
+          <h1 className="text-3xl font-bold text-center break-words">
             What do you want to hear about?
           </h1>
 
@@ -62,6 +70,7 @@ export default function NewSnippetPage() {
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Enter a topic, theme, or question..."
                 className="pr-24 h-12"
+                disabled={isSubmitting}
               />
               <div className="absolute right-1 top-1 flex space-x-1">
                 <DictaphoneComponent
@@ -70,11 +79,15 @@ export default function NewSnippetPage() {
                 <Button
                   type="submit"
                   size="icon"
-                  disabled={!inputValue.trim()}
+                  disabled={!inputValue.trim() || isSubmitting}
                   className="h-10 w-10"
                   aria-label="Submit"
                 >
-                  <SendHorizontal className="h-5 w-5" />
+                  {isSubmitting ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <SendHorizontal className="h-5 w-5" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -86,8 +99,8 @@ export default function NewSnippetPage() {
                   <Badge
                     key={topic}
                     variant="secondary"
-                    className="cursor-pointer hover:bg-secondary/90 transition-colors"
-                    onClick={() => handleTopicClick(topic)}
+                    className={`cursor-pointer hover:bg-secondary/90 transition-colors ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}
+                    onClick={() => !isSubmitting && handleTopicClick(topic)}
                   >
                     {topic}
                   </Badge>

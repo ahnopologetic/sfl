@@ -1,9 +1,11 @@
+import json
 import os
 import re
 from pathlib import Path
 from typing import Dict, List
 
 import openai
+from pydantic import BaseModel
 import requests
 from pydub import AudioSegment
 
@@ -176,3 +178,32 @@ def generate_podcast_audio(script: str, username: str, job_id: str) -> str:
     combine_audio_segments(segment_paths, str(final_path))
 
     return str(final_path)
+
+
+def extract_topics_from_text(text: str) -> List[str]:
+    class Topic(BaseModel):
+        topics: List[str]
+
+    openai_client = openai.OpenAI()
+    response = openai_client.responses.parse(
+        model="gpt-4o-mini",
+        input=[
+            {
+                "role": "system",
+                "content": """
+                You are a helpful assistant that extracts topics from a text.
+                Return a list of topics in a JSON format.
+
+                Example:
+                [
+                    "Topic 1",
+                    "Topic 2",
+                    "Topic 3"
+                ]
+                """,
+            },
+            {"role": "user", "content": text},
+        ],
+        text_format=Topic,
+    )
+    return response.output_parsed.topics

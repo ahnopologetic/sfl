@@ -7,7 +7,7 @@ export function Footer() {
     <footer className="border-t bg-background">
       <div className="container mx-auto px-4 py-6 md:px-6 md:py-8">
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 hidden sm:block">
             <div className="flex items-center gap-2">
               <Music className="h-6 w-6 text-primary" />
               <span className="font-bold">Snipfluent</span>
@@ -16,7 +16,7 @@ export function Footer() {
               Audio snippets for being fluent in anything
             </p>
           </div>
-          <div>
+          <div className="hidden sm:block">
             <h3 className="mb-3 text-sm font-medium">Product</h3>
             <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
               <li>
@@ -36,7 +36,7 @@ export function Footer() {
               </li>
             </ul>
           </div>
-          <div>
+          <div className="hidden sm:block">
             <h3 className="mb-3 text-sm font-medium">Company</h3>
             <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
               <li>
@@ -56,7 +56,7 @@ export function Footer() {
               </li>
             </ul>
           </div>
-          <div>
+          <div className="hidden sm:block">
             <h3 className="mb-3 text-sm font-medium">Legal</h3>
             <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
               <li>
