@@ -1,23 +1,12 @@
 FROM python:3.13-slim
 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+ADD . /app
+
+# Sync the project into a new environment, asserting the lockfile is up to date
 WORKDIR /app
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install uv
-RUN curl -sSf https://astral.sh/uv/install.sh | sh
-
-# Copy requirements file
-
-# Install dependencies using uv
-RUN uv pip install --system -e .
-
-# Copy application code
-COPY . .
+RUN uv sync --locked
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
