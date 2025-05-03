@@ -194,10 +194,12 @@ export default function NewSnippetPage() {
                       >
                         <div className="relative h-32 w-full rounded-md overflow-hidden">
                           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10" />
-                          <img
-                            src={topic.image_url}
+                          <Image
+                            src={`https://picsum.photos/200/300?random=${index}`}
                             alt={topic.title}
                             className="h-full w-full object-cover"
+                            width={200}
+                            height={300}
                           />
                           <div className="absolute bottom-0 left-0 p-2 z-20">
                             <h3 className="text-sm font-medium text-white">{topic.title}</h3>
