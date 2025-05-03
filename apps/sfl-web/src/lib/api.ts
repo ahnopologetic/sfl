@@ -61,6 +61,21 @@ export const profileApi = {
   getCurrentProfile: async () => {
     return await apiRequest('/users/me');
   },
+
+  updateCanvasAPIKey: async (apiKey: string, canvasURL: string): Promise<{
+    username: string;
+    first_name: string;
+    last_name: string;
+    middle_name?: string;
+    timezone: string;
+    canvas_api_key?: string;
+    canvas_url?: string;
+  }> => {
+    return await apiRequest('/users/me', {
+      method: 'PUT',
+      body: JSON.stringify({ canvas_api_key: apiKey, canvas_url: canvasURL }),
+    });
+  },
 };
 
 /**

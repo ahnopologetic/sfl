@@ -6,7 +6,7 @@ import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { Loader2, SendHorizontal } from "lucide-react";
 import { Header } from "@/app/components/layout/header";
-import { snippetApi, trendingTopicsApi } from "@/lib/api";
+import { profileApi, snippetApi, trendingTopicsApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import dynamic from 'next/dynamic';
 import { Skeleton } from "@/app/components/ui/skeleton";
@@ -23,6 +23,15 @@ export default function NewSnippetPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingTopics, setIsLoadingTopics] = useState(true);
   const router = useRouter();
+  const [profile, setProfile] = useState<{
+    username: string;
+    first_name: string;
+    last_name: string;
+    middle_name?: string;
+    timezone: string;
+    canvas_api_key?: string;
+    canvas_url?: string;
+  } | null>(null);
   const [trendingTopics, setTrendingTopics] = useState<{ title: string, description: string, image_url: string }[]>([]);
 
   useEffect(() => {
@@ -34,28 +43,6 @@ export default function NewSnippetPage() {
         const country = "US";
         const city = "New York";
 
-        // // Try to get user's location (optional)
-        // if (navigator.geolocation) {
-        //   const getPosition = () => {
-        //     return new Promise<GeolocationPosition>((resolve, reject) => {
-        //       navigator.geolocation.getCurrentPosition(resolve, reject, {
-        //         timeout: 5000,
-        //         maximumAge: 0
-        //       });
-        //     });
-        //   };
-
-        //   try {
-        //     const position = await getPosition();
-        //     region = "local";
-        //     country = position.coords.latitude.toFixed(2);
-        //     city = position.coords.longitude.toFixed(2);
-        //   } catch (error) {
-        //     console.log("Location access denied or unavailable, using defaults");
-        //     console.error(error);
-        //   }
-        // }
-
         const trendingTopics = await trendingTopicsApi.retrieve(region, country, city);
         setTrendingTopics(trendingTopics.topics);
       } catch (error) {
@@ -65,8 +52,13 @@ export default function NewSnippetPage() {
         setIsLoadingTopics(false);
       }
     };
+    const fetchProfile = async () => {
+      const profile = await profileApi.getCurrentProfile();
+      setProfile(profile);
+    };
 
     fetchTrendingTopics();
+    fetchProfile();
   }, []);
   const suggestedTopics = [
     "Space Exploration",
@@ -123,7 +115,11 @@ export default function NewSnippetPage() {
       <Header />
       <main className="flex flex-col items-center justify-center min-h-screen p-4">
         <div className="w-full max-w-2xl mx-auto space-y-8">
-          <CanvasConnector />
+          {
+            !profile?.canvas_api_key && (
+              <CanvasConnector />
+            )
+          }
           <h1 className="text-3xl font-bold text-center break-words">
             What do you want to hear about?
           </h1>

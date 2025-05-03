@@ -13,6 +13,8 @@ import {
     DialogTrigger,
     DialogClose
 } from "@/app/components/ui/dialog";
+import { profileApi } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 type SchoolCanvasItem = {
     name: string;
@@ -68,13 +70,14 @@ const CanvasConnector = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [schoolCanvasURL, setSchoolCanvasURL] = useState("");
     const [apiKey, setApiKey] = useState("");
-
+    const router = useRouter();
     const handleConnectCanvas = () => {
         window.open(`${schoolCanvasURL}/profile/settings`, '_blank');
     };
 
-    const handleSave = () => {
-        console.log("Saving API Key:", apiKey);
+    const handleSave = async () => {
+        await profileApi.updateCanvasAPIKey(apiKey, schoolCanvasURL);
+        router.refresh();
         setIsOpen(false);
     };
 
