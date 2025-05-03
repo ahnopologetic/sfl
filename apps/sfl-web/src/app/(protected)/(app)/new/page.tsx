@@ -1,14 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
-import { Mic, SendHorizontal } from "lucide-react";
+import { SendHorizontal } from "lucide-react";
 import { Header } from "@/app/components/layout/header";
+import { snippetApi } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import dynamic from 'next/dynamic';
+
+// Dynamically import speech recognition with no SSR
+const DictaphoneComponent = dynamic(
+  () => import('@/app/components/dictaphone-controller'),
+  { ssr: false }
+);
 
 export default function NewSnippetPage() {
   const [inputValue, setInputValue] = useState("");
+  const router = useRouter();
 
   const suggestedTopics = [
     "Space Exploration",
@@ -23,12 +33,13 @@ export default function NewSnippetPage() {
     "Modern Art"
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle submission of the request
-    console.log("Submitted:", inputValue);
-    // Reset input after submission
-    setInputValue("");
+    const job = await snippetApi.createJob(inputValue);
+    if (job) {
+      setInputValue("");
+      router.push(`/my-snippets`);
+    }
   };
 
   const handleTopicClick = (topic: string) => {
@@ -53,15 +64,9 @@ export default function NewSnippetPage() {
                 className="pr-24 h-12"
               />
               <div className="absolute right-1 top-1 flex space-x-1">
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="h-10 w-10"
-                  aria-label="Record with microphone"
-                >
-                  <Mic className="h-5 w-5" />
-                </Button>
+                <DictaphoneComponent
+                  onTranscriptChange={setInputValue}
+                />
                 <Button
                   type="submit"
                   size="icon"

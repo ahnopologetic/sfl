@@ -139,7 +139,7 @@ export const snippetApi = {
     created_at: string;
     updated_at: string;
   }[]> => {
-    return await apiRequest('/snippets/jobs');
+    return await apiRequest('/jobs');
   },
 
   getJobStatus: async (jobId: string) => {

@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { AppLayout } from "@/app/components/layout/app-layout";
-import { SnippetCard } from "@/app/components/snippets/snippet-card";
 import { SearchBar } from "@/app/components/snippets/search-bar";
+import { SnippetCard } from "@/app/components/snippets/snippet-card";
+import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
-import { Plus } from "lucide-react";
-import Link from "next/link";
+import { snippetApi } from '@/lib/api';
 import { createClient } from '@/utils/supabase/client';
 import type { User } from '@supabase/supabase-js';
-import { snippetApi } from '@/lib/api';
+import { Plus } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from 'react';
 
 export type Snippet = {
   id: string;
@@ -136,6 +137,14 @@ export default function MySnippetsPage() {
                     className="rounded-lg border bg-card p-6 shadow-sm"
                   >
                     <h3 className="font-medium">{job.request_text}</h3>
+                    <div className="flex items-center mt-2">
+                      <Badge
+                        variant={job.status === 'failed' ? 'destructive' : 'secondary'}
+                        className="text-xs"
+                      >
+                        {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+                      </Badge>
+                    </div>
                     <div className="mt-4">
                       <div className="flex justify-between text-sm">
                         <span>Progress</span>
