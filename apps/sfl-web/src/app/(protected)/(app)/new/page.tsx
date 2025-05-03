@@ -54,7 +54,7 @@ export default function NewSnippetPage() {
         setIsLoadingTopics(false);
       }
     };
-    
+
     const fetchProfile = async () => {
       try {
         const profile = await profileApi.getCurrentProfile();
@@ -63,7 +63,7 @@ export default function NewSnippetPage() {
         console.error("Error fetching profile:", error);
       }
     };
-    
+
     const fetchCanvasCurationJob = async () => {
       try {
         const canvasCurationJob = await profileApi.getCanvasCurationJob();
@@ -193,12 +193,12 @@ export default function NewSnippetPage() {
                   <div className="relative overflow-hidden w-full">
                     <div className="flex gap-2 animate-marquee whitespace-nowrap">
                       {canvasCurationJob.map((topic) => (
-                        <Badge key={topic} variant="secondary" className="cursor-pointer hover:bg-secondary/90 transition-colors">
+                        <Badge key={topic} variant="secondary" className="cursor-pointer hover:bg-secondary/90 transition-colors" onClick={() => !isSubmitting && handleTopicClick(topic)}>
                           {topic}
                         </Badge>
                       ))}
                       {canvasCurationJob.map((topic) => (
-                        <Badge key={`duplicate-${topic}`} variant="secondary" className="cursor-pointer hover:bg-secondary/90 transition-colors">
+                        <Badge key={`duplicate-${topic}`} variant="secondary" className="cursor-pointer hover:bg-secondary/90 transition-colors" onClick={() => !isSubmitting && handleTopicClick(topic)}>
                           {topic}
                         </Badge>
                       ))}
