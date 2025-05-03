@@ -410,7 +410,7 @@ async def create_snippet_job(
         background_tasks.add_task(
             process_snippet_job,
             job_id,
-            request.request_text,
+            topic,
             user.id,
             user.email,
             background_tasks,
