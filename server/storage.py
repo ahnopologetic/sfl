@@ -8,7 +8,7 @@ from supabase_client import supabase_client
 class StorageService:
     """Service for handling storage operations."""
     
-    BUCKET_NAME = "snippets"
+    BUCKET_NAME = "sfl"
     
     @classmethod
     async def initialize(cls) -> None:
@@ -45,7 +45,7 @@ class StorageService:
                 return False, None
                 
             filename = os.path.basename(file_path)
-            storage_path = f"{user_id}/{filename}"
+            storage_path = f"{filename}"
             
             with open(file_path, "rb") as f:
                 # Upload the file

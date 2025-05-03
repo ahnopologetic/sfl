@@ -7,7 +7,7 @@ import openai
 import requests
 from pydub import AudioSegment
 
-import settings
+from settings import settings
 
 
 def generate_podcast_script(text: str) -> str:

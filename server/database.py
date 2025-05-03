@@ -126,6 +126,115 @@ class SnippetRepository:
         return result.data[0] if result.data else None
 
     @staticmethod
+    async def get_snippets(
+        user_id: uuid.UUID,
+        page: int = 1,
+        limit: int = 20,
+        status: str = None,
+        search: str = None,
+        tags: List[str] = None,
+        sort: str = "created_at",
+        order: str = "desc",
+        is_public: bool = None,
+        job_id: uuid.UUID = None,
+    ) -> Dict[str, Any]:
+        """
+        Get paginated snippets with filtering options.
+        
+        Args:
+            user_id: The user ID to filter by
+            page: Page number (1-indexed)
+            limit: Number of items per page (max 100)
+            status: Filter by job status
+            search: Search in title and description
+            tags: Filter by tags
+            sort: Field to sort by
+            order: Sort direction (asc or desc)
+            is_public: Filter by public status
+            job_id: Filter by job ID
+            
+        Returns:
+            Dictionary with items and pagination info
+        """
+        # Validate and sanitize inputs
+        page = max(1, page)
+        limit = min(max(1, limit), 100)
+        offset = (page - 1) * limit
+        
+        valid_sort_fields = ["created_at", "updated_at", "title", "duration_seconds"]
+        if sort not in valid_sort_fields:
+            sort = "created_at"
+            
+        valid_orders = ["asc", "desc"]
+        if order not in valid_orders:
+            order = "desc"
+            
+        # Start building the query
+        query = supabase_client.table("snippets").select("*", count="exact")
+        
+        # Always filter by user_id (only show the user's snippets)
+        query = query.eq("user_id", str(user_id))
+        
+        # Apply filters
+        if job_id:
+            query = query.eq("job_id", str(job_id))
+            
+        if is_public is not None:
+            query = query.eq("is_public", is_public)
+            
+        if tags and len(tags) > 0:
+            # Filter snippets that have at least one of the specified tags
+            # This uses PostgreSQL's containment operator @>
+            for tag in tags:
+                query = query.contains("tags", [tag])
+                
+        if search:
+            search_term = f"%{search}%"
+            query = query.or_(f"title.ilike.{search_term},description.ilike.{search_term}")
+            
+        if status:
+            # Need to join with the jobs table to filter by status
+            # This is more complex in the Supabase client, might require a raw query
+            # For now, we'll fetch the job IDs with the desired status first
+            jobs_result = (
+                supabase_client.table("jobs")
+                .select("id")
+                .eq("user_id", str(user_id))
+                .eq("status", status)
+                .execute()
+            )
+            
+            if jobs_result.data:
+                job_ids = [job["id"] for job in jobs_result.data]
+                query = query.in_("job_id", job_ids)
+            else:
+                # No jobs with this status, return empty result
+                return {"items": [], "pagination": {"total": 0, "page": page, "limit": limit, "total_pages": 0}}
+        
+        # Apply ordering
+        query = query.order(sort, desc=order == "desc")
+        
+        # Apply pagination
+        query = query.range(offset, offset + limit - 1)
+        
+        # Execute the query
+        result = query.execute()
+        
+        # Calculate pagination info
+        count = result.count if result.count is not None else 0
+        total_pages = (count + limit - 1) // limit
+        
+        return {
+            "items": result.data,
+            "pagination": {
+                "total": count,
+                "page": page,
+                "limit": limit,
+                "total_pages": total_pages,
+            },
+        }
+
+    @staticmethod
     async def update_snippet(
         snippet_id: uuid.UUID, user_id: uuid.UUID, snippet_data: Dict[str, Any]
     ) -> Dict[str, Any]:

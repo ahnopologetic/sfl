@@ -45,6 +45,34 @@ class ProfileResponse(BaseModel):
     updated_at: datetime
 
 
+class SnippetListItem(BaseModel):
+    id: uuid.UUID
+    title: str
+    description: Optional[str] = None
+    audio_url: str
+    duration_seconds: int
+    tags: List[str] = []
+    is_public: bool
+    spotify_track_id: Optional[str] = None
+    spotify_artist: Optional[str] = None
+    spotify_album: Optional[str] = None
+    job_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+
+class PaginationInfo(BaseModel):
+    total: int
+    page: int
+    limit: int
+    total_pages: int
+
+
+class SnippetListResponse(BaseModel):
+    items: List[SnippetListItem]
+    pagination: PaginationInfo
+
+
 class SnippetJobRequest(BaseModel):
     request_text: str
 
