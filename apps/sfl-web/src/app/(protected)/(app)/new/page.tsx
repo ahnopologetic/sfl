@@ -190,7 +190,7 @@ export default function NewSnippetPage() {
                   <p className="text-sm text-muted-foreground mb-3">
                     Topics from your courses:
                   </p>
-                  <div className="relative overflow-hidden w-full">
+                  <div className="relative overflow-x-auto w-full">
                     <div className="flex gap-2 animate-marquee whitespace-nowrap">
                       {canvasCurationJob.map((topic) => (
                         <Badge key={topic} variant="secondary" className="cursor-pointer hover:bg-secondary/90 transition-colors" onClick={() => !isSubmitting && handleTopicClick(topic)}>
@@ -211,7 +211,7 @@ export default function NewSnippetPage() {
               <p className="text-sm text-muted-foreground mb-3">
                 Trending topics:
               </p>
-              <div className="relative overflow-hidden w-full">
+              <div className="relative overflow-x-auto w-full">
                 {isLoadingTopics ? (
                   <TrendingTopicsSkeleton />
                 ) : (
@@ -269,7 +269,7 @@ export default function NewSnippetPage() {
               <p className="text-sm text-muted-foreground mb-3">
                 Try these interesting topics:
               </p>
-              <div className="relative overflow-hidden w-full">
+              <div className="relative overflow-x-auto w-full">
                 <div className="flex gap-2 animate-marquee whitespace-nowrap">
                   {suggestedTopics.map((topic) => (
                     <Badge
