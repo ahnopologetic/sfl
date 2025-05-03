@@ -5,7 +5,6 @@ import { snippetApi } from "@/lib/api";
 import { AudioPlayer } from "@/app/components/player/audio-player";
 import { SnippetMetadata } from "@/app/components/snippets/snippet-metadata";
 import { Badge } from "@/app/components/ui/badge";
-import toast from "react-hot-toast";
 
 // Define our base snippet type
 interface Snippet {
@@ -41,11 +40,6 @@ export function SnippetDetail({ id }: SnippetDetailProps) {
     const fetchSnippet = async () => {
       try {
         const data = await snippetApi.getSnippetMetadata(id);
-        
-        if (!data.is_public) {
-          toast.error("This snippet is not public");
-          return;
-        }
 
         // Ensure the data matches our CompleteSnippet type
         const completeData: CompleteSnippet = {

@@ -9,6 +9,7 @@ import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
 import type { AuthError } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
+
 export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
