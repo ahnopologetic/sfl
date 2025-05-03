@@ -1,17 +1,34 @@
 "use client";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "../ui/input";
 
 export function SearchBar() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get('search') || "";
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+
+  // Update search query state when URL parameters change
+  useEffect(() => {
+    setSearchQuery(searchParams.get('search') || "");
+  }, [searchParams]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Comment for later implementation:
-    // TODO: Connect to search endpoint for snippets
-    console.log("Searching for:", searchQuery);
+    // Create new URL with search parameter
+    const params = new URLSearchParams(searchParams.toString());
+    
+    if (searchQuery.trim()) {
+      params.set('search', searchQuery.trim());
+    } else {
+      params.delete('search');
+    }
+    
+    // Navigate to the new URL with search parameter
+    router.push(`/explore?${params.toString()}`);
   };
 
   return (

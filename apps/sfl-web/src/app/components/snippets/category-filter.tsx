@@ -1,12 +1,29 @@
 "use client";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface CategoryFilterProps {
   categories: string[];
 }
 
 export function CategoryFilter({ categories }: CategoryFilterProps) {
-  const [activeCategory, setActiveCategory] = useState("All");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeCategory = searchParams.get('category') || 'All';
+  
+  const handleCategoryChange = (category: string) => {
+    // Use URLSearchParams to create query string with current parameters
+    const params = new URLSearchParams(searchParams.toString());
+    
+    if (category === 'All') {
+      // Remove category parameter when selecting "All"
+      params.delete('category');
+    } else {
+      params.set('category', category);
+    }
+    
+    // Navigate to the new URL with updated params
+    router.push(`/explore?${params.toString()}`);
+  };
 
   return (
     <div className="overflow-x-auto pb-2">
@@ -14,7 +31,7 @@ export function CategoryFilter({ categories }: CategoryFilterProps) {
         {categories.map((category) => (
           <button
             key={category}
-            onClick={() => setActiveCategory(category)}
+            onClick={() => handleCategoryChange(category)}
             className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               activeCategory === category
                 ? "bg-primary text-primary-foreground"

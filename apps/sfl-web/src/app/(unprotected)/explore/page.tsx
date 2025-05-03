@@ -2,76 +2,92 @@ import { AppLayout } from "../../components/layout/app-layout";
 import { SnippetCard } from "../../components/snippets/snippet-card";
 import { CategoryFilter } from "../../components/snippets/category-filter";
 import { SearchBar } from "../../components/snippets/search-bar";
+import { supabase } from "../../../lib/supabase";
 
-// Mock data - would be fetched from API in a real app
-const categories = [
-  "All",
-  "Science",
-  "Technology",
-  "History",
-  "Arts",
-  "Business",
-  "Health",
-];
+// Define the Snippet interface based on the database schema
+interface Snippet {
+  id: string;
+  user_id: string;
+  job_id: string;
+  title: string;
+  description: string;
+  audio_url: string;
+  duration_seconds: number;
+  tags: string[];
+  is_public: boolean;
+  spotify_track_id?: string;
+  spotify_artist?: string;
+  spotify_album?: string;
+  created_at: string;
+  updated_at: string;
+}
 
-const snippets = [
-  {
-    id: "1",
-    title: "The Science of Black Holes",
-    description: "Learn about the formation and mysteries of black holes",
-    duration_seconds: 312, // in seconds
-    tags: ["Science", "Physics", "Space"],
-    created_at: new Date("2023-09-15").toISOString(),
-    is_public: true,
-  },
-  {
-    id: "2",
-    title: "Introduction to Machine Learning",
-    description: "A beginner-friendly overview of machine learning concepts",
-    duration_seconds: 420, // in seconds
-    tags: ["Technology", "AI", "Programming"],
-    created_at: new Date("2023-10-05").toISOString(),
-    is_public: true,
-  },
-  {
-    id: "3",
-    title: "The History of the Roman Empire",
-    description: "Explore the rise and fall of one of history's greatest empires",
-    duration_seconds: 550, // in seconds
-    tags: ["History", "Ancient Civilizations"],
-    created_at: new Date("2023-11-22").toISOString(),
-    is_public: true,
-  },
-  {
-    id: "4",
-    title: "Understanding Blockchain Technology",
-    description: "The fundamentals of blockchain explained simply",
-    duration_seconds: 380, // in seconds
-    tags: ["Technology", "Cryptocurrency", "Finance"],
-    created_at: new Date("2023-12-01").toISOString(),
-    is_public: true,
-  },
-  {
-    id: "5",
-    title: "Modern Art Movements",
-    description: "A journey through the major movements in modern art",
-    duration_seconds: 480, // in seconds
-    tags: ["Arts", "Culture", "History"],
-    created_at: new Date("2024-01-10").toISOString(),
-    is_public: true,
-  },
-  {
-    id: "6",
-    title: "The Science of Sleep",
-    description: "Understanding how sleep works and its importance for health",
-    duration_seconds: 410, // in seconds
-    tags: ["Health", "Science", "Wellness"],
-    created_at: new Date("2024-02-05").toISOString(),
-    is_public: true,
-  },
-];
+// Function to fetch public snippets from Supabase
+async function getPublicSnippets(params: { 
+  category?: string;
+  search?: string;
+}) {
+  let query = supabase
+    .from('snippets')
+    .select('*')
+    .eq('is_public', true)
+    .order('created_at', { ascending: false });
+  
+  // Apply category filter if not "All"
+  if (params.category && params.category !== 'All') {
+    query = query.contains('tags', [params.category]);
+  }
+  
+  // Apply search filter if provided
+  if (params.search) {
+    query = query.or(`title.ilike.%${params.search}%,description.ilike.%${params.search}%`);
+  }
+  
+  const { data, error } = await query;
+  
+  if (error) {
+    console.error('Error fetching snippets:', error);
+    return [];
+  }
+  
+  return data as Snippet[];
+}
 
-export default function ExplorePage() {
+// Function to extract unique categories from snippets
+function getUniqueCategories(snippets: Snippet[]) {
+  const categoriesSet = new Set<string>();
+  categoriesSet.add('All'); // Always include "All" category
+  
+  snippets.forEach(snippet => {
+    if (snippet.tags && Array.isArray(snippet.tags)) {
+      snippet.tags.forEach((tag: string) => categoriesSet.add(tag));
+    }
+  });
+  
+  return Array.from(categoriesSet);
+}
+
+export default async function ExplorePage({
+  searchParams,
+}: {
+  searchParams: { 
+    category?: string;
+    search?: string;
+  };
+}) {
+  // Get the parameters from URL
+  const selectedCategory = searchParams.category || 'All';
+  const searchQuery = searchParams.search || '';
+  
+  // Fetch snippets with filters
+  const snippets = await getPublicSnippets({
+    category: selectedCategory,
+    search: searchQuery,
+  });
+  
+  // Extract unique categories from all snippets
+  const categories = getUniqueCategories(snippets);
+
   return (
     <AppLayout>
       <div className="container mx-auto px-4 py-8 md:py-12">
@@ -91,9 +107,18 @@ export default function ExplorePage() {
         </div>
         
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {snippets.map((snippet) => (
-            <SnippetCard key={snippet.id} snippet={snippet} />
-          ))}
+          {snippets.length > 0 ? (
+            snippets.map((snippet) => (
+              <SnippetCard key={snippet.id} snippet={snippet} />
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12">
+              <h3 className="text-xl font-medium">No snippets found</h3>
+              <p className="mt-2 text-muted-foreground">
+                Try changing your search filters or check back later
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </AppLayout>

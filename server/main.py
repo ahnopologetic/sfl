@@ -495,7 +495,7 @@ async def get_audio_snippet(
     tags=["snippets"],
 )
 async def get_snippet_metadata(
-    snippet_id: uuid.UUID, user: TokenData = Depends(get_current_user)
+    snippet_id: uuid.UUID
 ):
     """
     Get metadata for a snippet.
@@ -503,7 +503,7 @@ async def get_snippet_metadata(
     This endpoint retrieves the metadata of a specific snippet by its ID.
     """
     # Get snippet from Supabase
-    snippet = await SnippetRepository.get_snippet(snippet_id, user.id)
+    snippet = await SnippetRepository.get_snippet(snippet_id)
 
     if not snippet:
         raise HTTPException(
@@ -511,7 +511,7 @@ async def get_snippet_metadata(
         )
 
     # Get the job status
-    job = await JobRepository.get_job(uuid.UUID(snippet["job_id"]), user.id)
+    job = await JobRepository.get_job(uuid.UUID(snippet["job_id"]))
 
     if not job:
         # If job not found but snippet exists, assume it's completed

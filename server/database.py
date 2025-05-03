@@ -70,13 +70,12 @@ class JobRepository:
         return result.data
 
     @staticmethod
-    async def get_job(job_id: uuid.UUID, user_id: uuid.UUID) -> Dict[str, Any]:
-        """Get a job by ID and check ownership."""
+    async def get_job(job_id: uuid.UUID, user_id: uuid.UUID | None = None) -> Dict[str, Any]:
+        """Get a job by ID."""
         result = (
             supabase_client.table("jobs")
             .select("*")
             .eq("id", str(job_id))
-            .eq("user_id", str(user_id))
             .execute()
         )
         return result.data[0] if result.data else None
@@ -114,13 +113,12 @@ class SnippetRepository:
         return result.data[0] if result.data else None
 
     @staticmethod
-    async def get_snippet(snippet_id: uuid.UUID, user_id: uuid.UUID) -> Dict[str, Any]:
-        """Get a snippet by ID and check ownership."""
+    async def get_snippet(snippet_id: uuid.UUID) -> Dict[str, Any]:
+        """Get a snippet by ID."""
         result = (
             supabase_client.table("snippets")
             .select("*")
             .eq("id", str(snippet_id))
-            .eq("user_id", str(user_id))
             .execute()
         )
 
@@ -261,7 +259,7 @@ class SnippetRepository:
     ) -> Dict[str, Any]:
         """Update a snippet by ID if owned by the user."""
         # First check if the snippet exists and is owned by the user
-        existing = await SnippetRepository.get_snippet(snippet_id, user_id)
+        existing = await SnippetRepository.get_snippet(snippet_id)
         if not existing or existing["user_id"] != str(user_id):
             return None
 
